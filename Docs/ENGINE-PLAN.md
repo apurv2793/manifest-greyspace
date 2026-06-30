@@ -22,6 +22,46 @@
 
 ---
 
+## Game structure (confirmed)
+
+```
+┌─────────────────────────────────────────────┐
+│                  HUB WORLD                  │
+│  Persistent space. Always returned to.      │
+│  NPCs · Skill tree · Inventory · Mission    │
+│  board · Story conversations · Secrets      │
+└────────────┬────────────────────────────────┘
+             │ enter mission
+             ▼
+┌─────────────────────────────────────────────┐
+│               MISSION SCENE                 │
+│  Self-contained. Discrete objective.        │
+│  Multi-zone map with secrets + transitions  │
+│  Enemies · Loot · Story moments             │
+└────────────┬───────────────┬────────────────┘
+             │ complete       │ die
+             ▼               ▼
+        return to hub    penalty applied
+                         then return to hub
+```
+
+**Mission types** (selective — not all missions are story missions):
+
+| Type | Gated by | Returns |
+|------|----------|---------|
+| Story mission | Story flag | Narrative progress, skill unlock |
+| Side mission | Available from hub board | XP, loot, optional lore |
+| Exploration | World discovery | Secrets, passive boons |
+| *More TBD* | | |
+
+**Key rules the engine enforces:**
+- Player state (HP, inventory, skills) persists hub → mission → hub
+- Missions are Unity scenes loaded additively over a persistent hub state
+- Death in a mission triggers the penalty system, then returns to hub
+- Story flags are the only hard gate; everything else is opt-in
+
+---
+
 ## Current state (MVP done ✅)
 
 - Isometric camera (orthographic, 40°/45°, smooth follow)
@@ -68,41 +108,55 @@ five mechanics working together. Nothing else matters until these are right.
 
 ---
 
-## Phase 2 — Map & Level System
-### Replace arenas with explorable spaces
+## Phase 2 — Hub World & Mission System
+### The skeleton the whole game hangs on
 
-Not small rooms. Proper maps with geography, hidden paths, and level transitions.
+Two distinct scene types: the hub (always persistent) and missions (discrete, loaded on demand).
 
-**2A · Map structure**
-- Each map is a Unity scene: larger than a room, designed by hand.
-- Has distinct zones within it (open areas, corridors, vertical drops, secret alcoves).
-- Camera bounds per zone — camera clamps to the zone the player is currently in,
-  then smoothly transitions when crossing into a new zone.
+**2A · Hub world scene**
+- A proper explorable space, not a menu. Player walks around it.
+- Contains: mission entry points (doors, portals, NPCs), skill tree access,
+  inventory screen, any story-critical NPCs.
+- Persistent: NPC states, opened secrets, story flags all reflected visually.
+- `HubManager.cs` — initialises hub state from save on load, keeps it in sync.
 
-**2B · Level transitions**
-- Trigger zones that load the next scene (async, with a loading fade).
-- State persists across transitions: player HP, inventory, active skills carry over.
-- `LevelTransition.cs` — trigger volume + target scene name + spawn point ID.
+**2B · Mission entry / exit**
+- Mission entry: a trigger zone in the hub (a door, a portal, an NPC conversation).
+  Shows mission info card (name, type, suggested level) before confirming.
+- On confirm: save hub state → async load mission scene → spawn player at mission start.
+- Mission exit: objective complete → exit trigger → unload mission → restore hub →
+  apply rewards → trigger any story flag changes.
+- `MissionLoader.cs` — handles both directions. `MissionDefinition` ScriptableObject
+  holds scene name, spawn point, mission type, story flag requirement, rewards.
 
-**2C · Secret openings**
-- Destructible walls (hit N times to break), pressure plates, hidden switches.
-- Reveal passages to optional areas: bonus enemies, lore items, skill unlocks.
-- `DestructibleWall.cs`, `PressurePlate.cs` — both fire a Unity Event on activate,
-  so the designer connects them to whatever door/passage without code.
+**2C · Mission scene structure**
+- Each mission is its own Unity scene: hand-crafted, multi-zone.
+- Zones within a mission are camera-bounded areas. Camera clamps to the active zone,
+  transitions smoothly when the player crosses a zone boundary.
+- `ZoneBounds.cs` — trigger volume per zone, tells camera where to clamp.
 
-**2D · Enemy territory zones**
-- Enemies belong to a zone. They stop chasing when the player leaves their zone.
-- Prevents enemies from pooling across the entire map.
-- `EnemyTerritory.cs` — a trigger volume; enemies check if player is still inside
-  before continuing pursuit.
+**2D · Secrets & interactables**
+- Destructible walls, pressure plates, hidden switches — all fire a UnityEvent on trigger.
+- Designer wires them to whatever they open in Inspector. No code per secret.
+- `Destructible.cs`, `PressurePlate.cs`, `Switch.cs` — three reusable components.
 
-**2E · Minimap**
-- Simple top-down render texture showing explored vs unexplored zones.
-- Marks player position, level exits, and any revealed secrets.
-- Fog of war clears as player enters each zone.
+**2E · Enemy territory**
+- Enemies belong to a zone trigger. Stop chasing if player leaves their zone.
+- Prevents all enemies pooling at one location across a large map.
+- `EnemyTerritory.cs` — one trigger volume per zone, auto-assigned to spawned enemies.
 
-**Milestone:** A multi-zone map with at least one secret passage and one level exit
-that loads a second map with player state preserved.
+**2F · Death → hub return**
+- On player death in a mission: freeze, penalty applied, fade out, hub restored.
+- Player spawns back in hub at the last used mission entry point.
+- Penalty system (Phase 4/6) hooks in here — engine just fires the event.
+
+**2G · Minimap**
+- Per-mission fog of war minimap. Clears as zones are entered.
+- Hub has its own always-visible minimap with mission entry icons.
+
+**Milestone:** Hub scene with two mission entry points. Mission 1 loads, player
+completes it, returns to hub with rewards applied. Mission 2 requires a story
+flag not yet set — entry is locked with a visible reason.
 
 ---
 
