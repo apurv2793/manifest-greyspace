@@ -116,7 +116,7 @@ public class GunEnemy : MonoBehaviour
         {
             nextAttack = Time.time + attackCooldown;
             GunCharacter pc = player.GetComponent<GunCharacter>();
-            if (pc != null) pc.TakeDamage(attackDamage);
+            if (pc != null) pc.TakeDamage(attackDamage, transform.position, 12f);
         }
 
         // Update HP bar (left-anchored scale)
@@ -130,12 +130,30 @@ public class GunEnemy : MonoBehaviour
         }
     }
 
-    public void TakeDamage(int dmg)
+    // sourcePos and knockbackForce are optional — old callers (Projectile) still work
+    public void TakeDamage(int dmg, Vector3 sourcePos = default, float knockbackForce = 0f)
     {
         if (isDead) return;
         health -= dmg;
+        if (knockbackForce > 0f)
+        {
+            Vector3 dir = transform.position - sourcePos; dir.y = 0;
+            if (dir.sqrMagnitude > 0f) StartCoroutine(Knockback(dir.normalized * knockbackForce));
+        }
         if (health <= 0) StartCoroutine(Die());
         else StartCoroutine(HitFlash());
+    }
+
+    IEnumerator Knockback(Vector3 push)
+    {
+        float elapsed = 0f, duration = 0.25f;
+        while (elapsed < duration && !isDead)
+        {
+            float decay = 1f - (elapsed / duration);
+            transform.position += push * decay * Time.deltaTime;
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
     }
 
     IEnumerator HitFlash()

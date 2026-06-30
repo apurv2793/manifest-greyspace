@@ -9,8 +9,10 @@ public class GunCharacter : MonoBehaviour
     public float dashSpeed = 22f;
     public float dashDuration = 0.12f;
     public float dashCooldown = 0.85f;
-    public float shootCooldown = 0.16f;
     public int maxHealth = 100;
+
+    // Assign to override the default Sword 3-hit combo (e.g. ComboData.Rapid5Hit())
+    public ComboData comboData;
 
     // State (read by GreyspaceScene)
     [HideInInspector] public int health;
@@ -24,8 +26,15 @@ public class GunCharacter : MonoBehaviour
     // Leave null to use built-in primitive character.
     public GameObject customVisualRoot;
 
-    float nextShoot, nextDash;
+    float nextDash;
     bool isDashing, invincible;
+    MeleeAttack _melee;
+    System.Collections.Generic.List<ComboData> _weapons;
+    int _weaponIndex;
+    const int MAX_WEAPONS = 2;
+
+    // Set by GreyspaceScene so weapon name shows on HUD
+    [HideInInspector] public UnityEngine.UI.Text weaponLabel;
     Vector3 dashDir;
 
     // -------------------------------------------------------------------------
@@ -34,6 +43,13 @@ public class GunCharacter : MonoBehaviour
         health = maxHealth;
         if (customVisualRoot == null) BuildPrimitiveCharacter();
         else Debug.Log("GunCharacter: Using custom visual root — " + customVisualRoot.name);
+
+        // Player starts with only Sword; second slot is empty (max 2 weapons)
+        _weapons = new System.Collections.Generic.List<ComboData> { ComboData.Sword() };
+        _weaponIndex = 0;
+        _melee = gameObject.AddComponent<MeleeAttack>();
+        _melee.comboData = comboData != null ? comboData : _weapons[0];
+        UpdateWeaponLabel();
     }
 
     // =========================================================================
@@ -140,8 +156,9 @@ public class GunCharacter : MonoBehaviour
         if (isDead) return;
         Move();
         Aim();
-        Shoot();
+        _melee?.HandleInput();
         DashInput();
+        WeaponSwitch();
         if (healthFill != null)
             healthFill.fillAmount = Mathf.Max(0f, (float)health / maxHealth);
     }
@@ -185,26 +202,59 @@ public class GunCharacter : MonoBehaviour
         }
     }
 
-    void Shoot()
-    {
-        if (!Input.GetMouseButton(0) || Time.time < nextShoot) return;
-        nextShoot = Time.time + shootCooldown;
 
-        Vector3 spawn = transform.position + transform.forward * 0.7f + Vector3.up * 1.1f;
-        GameObject p = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        p.name = "Projectile";
-        p.transform.position = spawn;
-        p.transform.localScale = Vector3.one * 0.17f;
-        Destroy(p.GetComponent<Collider>());
-        p.GetComponent<Renderer>().material = Mat(new Color(1f, 0.85f, 0.1f));
-        Projectile proj = p.AddComponent<Projectile>();
-        proj.direction = transform.forward;
-        proj.owner = "Player";
+    void WeaponSwitch()
+    {
+        if (!Input.GetKeyDown(KeyCode.Tab)) return;
+        if (_weapons.Count <= 1) return; // nothing to switch to
+        _weaponIndex = (_weaponIndex + 1) % _weapons.Count;
+        _melee.comboData = _weapons[_weaponIndex];
+        _melee.ResetCombo();
+        string wname = _weapons[_weaponIndex].name;
+        UpdateWeaponLabel();
+        Debug.Log("[Weapon] Switched to " + wname);
+    }
+
+    void UpdateWeaponLabel()
+    {
+        if (weaponLabel == null) return;
+        string label = _weapons[_weaponIndex].name;
+        if (_weapons.Count > 1)
+        {
+            int other = (_weaponIndex + 1) % _weapons.Count;
+            label += "  |  " + _weapons[other].name + "  [TAB]";
+        }
+        weaponLabel.text = label;
+    }
+
+    public void PickupWeapon(ComboData picked)
+    {
+        if (_weapons.Count < MAX_WEAPONS)
+        {
+            // Empty slot available — just add it
+            _weapons.Add(picked);
+            Debug.Log("[Pickup] Added weapon: " + picked.name
+                      + "  (now have " + _weapons.Count + " weapons)");
+        }
+        else
+        {
+            // Replace the weapon that is NOT currently equipped (the stored slot)
+            int replaceIdx = (_weaponIndex + 1) % _weapons.Count;
+            string oldName = _weapons[replaceIdx].name;
+            _weapons[replaceIdx] = picked;
+            Debug.Log("[Pickup] Replaced " + oldName + " with " + picked.name);
+        }
+
+        UpdateWeaponLabel();
+
+        // Keep MeleeAttack in sync with currently equipped weapon
+        if (_melee != null) _melee.comboData = _weapons[_weaponIndex];
     }
 
     void DashInput()
     {
-        if (!Input.GetKeyDown(KeyCode.LeftShift) || Time.time < nextDash) return;
+        bool dashPressed = Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.Space);
+        if (!dashPressed || Time.time < nextDash) return;
         nextDash = Time.time + dashCooldown;
 
         float h = 0, v = 0;
@@ -234,13 +284,30 @@ public class GunCharacter : MonoBehaviour
         invincible = false;
     }
 
-    public void TakeDamage(int dmg)
+    public void TakeDamage(int dmg, Vector3 sourcePos = default, float force = 0f)
     {
         if (isDead || invincible) return;
         health -= dmg;
         Debug.Log("Player HP: " + health + "/" + maxHealth);
+        if (force > 0f)
+        {
+            Vector3 dir = transform.position - sourcePos; dir.y = 0;
+            if (dir.sqrMagnitude > 0f) StartCoroutine(PlayerKnockback(dir.normalized * force));
+        }
         StartCoroutine(DamageFlash());
         if (health <= 0) Die();
+    }
+
+    IEnumerator PlayerKnockback(Vector3 push)
+    {
+        float elapsed = 0f, duration = 0.2f;
+        while (elapsed < duration && !isDead)
+        {
+            float decay = 1f - (elapsed / duration);
+            transform.position += push * decay * Time.deltaTime;
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
     }
 
     IEnumerator DamageFlash()
