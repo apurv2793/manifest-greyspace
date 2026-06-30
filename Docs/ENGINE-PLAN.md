@@ -166,10 +166,18 @@ Two distinct scene types: the hub (always persistent) and missions (discrete, lo
 - Prevents all enemies pooling at one location across a large map.
 - `EnemyTerritory.cs` — one trigger volume per zone, auto-assigned to spawned enemies.
 
-**2F · Death → hub return**
-- On player death in a mission: freeze, `GameEvents.OnPlayerDeath` fires, fade out, hub restored.
-- Player spawns back in the hub this mission branched from.
-- Spawn location within the hub and any consequences: ⛔ deferred to penalty system design.
+**2F · Checkpoints**
+- Physical objects in the world (hub areas and missions) the player activates by proximity or interaction.
+- Activating a checkpoint: saves position + scene + session state snapshot to `CheckpointState`.
+- `Checkpoint.cs` — trigger or interactable, fires `GameEvents.OnCheckpointReached`.
+- Checkpoints are placed by hand in each scene. No auto-placement.
+- Each scene has a default spawn checkpoint (start of scene) so death always has a fallback.
+
+**2G · Death → respawn**
+- On death: `GameEvents.OnPlayerDeath` fires → penalty hook (⛔ deferred) → fade out.
+- Respawn: reload last activated checkpoint. If checkpoint was in a mission, reload that
+  mission scene and place player at checkpoint position. If in a hub, restore hub at that point.
+- `RespawnManager.cs` — reads `CheckpointState`, handles scene reload + player placement.
 
 **2G · Minimap**
 - Per-mission fog of war minimap. Clears as zones are entered.
@@ -296,8 +304,9 @@ the player to change approach. A boss with two phases.
 - What that method does is entirely TBD. Nothing else in the engine assumes it.
 
 **6D · Save / load**
-- Auto-save on level transition and on returning to hub.
-- `SaveManager.cs` — serialises WorldState + PlayerInventory + skill tree state to JSON.
+- Auto-save triggers: checkpoint activated, hub-to-hub transition, mission complete.
+- `SaveManager.cs` — serialises WorldState + PlayerInventory + SkillTree + CheckpointState to JSON.
+- `CheckpointState` contains: scene name, checkpoint ID, player stats at time of save.
 - Single save slot for now. Multiple slots trivial to add later.
 
 **Milestone:** Player progresses through two maps, closes the game, reopens —
