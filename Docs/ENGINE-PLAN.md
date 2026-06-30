@@ -167,9 +167,9 @@ Two distinct scene types: the hub (always persistent) and missions (discrete, lo
 - `EnemyTerritory.cs` — one trigger volume per zone, auto-assigned to spawned enemies.
 
 **2F · Death → hub return**
-- On player death in a mission: freeze, penalty applied, fade out, hub restored.
-- Player spawns back in hub at the last used mission entry point.
-- Penalty system (Phase 4/6) hooks in here — engine just fires the event.
+- On player death in a mission: freeze, `GameEvents.OnPlayerDeath` fires, fade out, hub restored.
+- Player spawns back in the hub this mission branched from.
+- Spawn location within the hub and any consequences: ⛔ deferred to penalty system design.
 
 **2G · Minimap**
 - Per-mission fog of war minimap. Clears as zones are entered.
@@ -227,13 +227,11 @@ This replaces Hades' per-room boon selection entirely. Two parallel tracks:
 - Completely decoupled from story content: the engine checks flags, story systems set them.
 - This means story writers can gate skills without touching the skill tree code.
 
-**4C · Penalty system**
-- *Structure TBD — to be designed with story context.*
-- Placeholder: on death, a consequence is applied (lose some XP, a skill is temporarily
-  disabled, an NPC reacts, a resource is reduced).
-- Engine hook is ready: `PlayerDeath` fires an event. Whatever the penalty system is,
-  it subscribes to that event. No combat code changes needed.
-- `PenaltyManager.cs` — empty subscriber shell, ready to be filled.
+**4C · Penalty system — ⛔ DEFERRED**
+- Design locked until story and world structure are further defined.
+- Engine only ships one thing now: `GameEvents.OnPlayerDeath` fires on death.
+  `PenaltyManager.cs` is an empty subscriber — nothing hooks into it until design is ready.
+- When penalty design is finalised, it plugs in here with zero changes to combat code.
 
 **4D · Inventory / loadout**
 - Player holds: 1 weapon, up to 4 active skills (mapped to keys), passive boons (unlimited).
@@ -282,24 +280,20 @@ the player to change approach. A boss with two phases.
 ## Phase 6 — Meta-Progression
 ### What persists, what resets, what changes
 
-*The penalty system design lives here but remains a placeholder until the story
-structure is clearer. The engine scaffolding is built now so it can be filled in later.*
-
 **6A · Persistent world state**
 - What permanently changes: doors opened, NPCs met, story flags set, levels unlocked.
 - Saved to disk. Never resets.
 - `WorldState.cs` — dictionary of string keys → values. `WorldState.Set("key", value)`.
 
-**6B · Run state (within a session)**
-- What resets on death or on starting a new session (TBD with penalty design):
-  could be XP since last checkpoint, temporary buffs, resource counts.
-- `RunState.cs` — session-scoped, cleared on defined events.
+**6B · Session state**
+- Tracks what changed this session: XP gained, items collected, enemies killed.
+- Cleared/applied on hub return. Exact reset rules depend on penalty design — left open.
+- `SessionState.cs` — accumulates during a mission, flushed on mission end.
 
-**6C · Penalty system (placeholder)**
-- The hook: `GameEvents.OnPlayerDeath` → `PenaltyManager.ApplyPenalty()`
-- What `ApplyPenalty()` does is entirely story/design-driven.
-- Could be: checkpoint rollback, skill lock, narrative consequence, resource drain.
-- Engine is ready. Design fills it in.
+**6C · Penalty system — ⛔ DEFERRED**
+- Not designed yet. Intentionally left open.
+- Engine contract: `GameEvents.OnPlayerDeath` fires. `PenaltyManager.ApplyPenalty()` is called.
+- What that method does is entirely TBD. Nothing else in the engine assumes it.
 
 **6D · Save / load**
 - Auto-save on level transition and on returning to hub.
