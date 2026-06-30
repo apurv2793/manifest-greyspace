@@ -1,334 +1,331 @@
 # Manifest Greyspace — Engine Plan
 
-> Goal: Build a reusable, modular action-roguelike engine in Unity 6 URP,
-> inspired by Hades' feel and mechanics. Game content, story, and lore are
-> developed separately and dropped into this engine once it's ready.
+> **Goal:** Build a modular, reusable isometric action engine in Unity 6 URP.
+> Combat feel and mechanical depth inspired by Hades. Everything else — story,
+> world, progression structure, penalty system — is original.
+>
+> **Team:** Solo (you + Claude Max). Every system is built template-first:
+> one working version in code, all tunable data in ScriptableObjects so content
+> can be added without touching scripts.
 
 ---
 
-## What "engine" means here
+## What we're taking from Hades (mechanics only)
 
-Hades has two layers:
-1. **Engine** — combat feel, room flow, progression loop, systems (weapons, boons, enemies). This is what we're building.
-2. **Content** — Zagreus, Olympian gods, Greek underworld. This is what you'll replace with your own game.
-
-Everything below is engine. None of it assumes your story.
+| Take | Leave behind |
+|------|-------------|
+| Combat responsiveness (hit stop, i-frames, knockback) | Roguelike room structure |
+| Melee + ranged + special attack system | Per-room boon selection |
+| Enemy archetypes that combo together | Post-death full reset |
+| Dash as a core mechanic | Olympian god theming |
+| Visual/audio feedback polish | Any specific Hades content |
 
 ---
 
 ## Current state (MVP done ✅)
 
-- Isometric camera (orthographic, 40°/45°, follows player)
-- Player: WASD movement (camera-relative), mouse aim, left-click shoot, Shift dash + i-frames
-- Enemy: chase AI, melee attack, world-space HP bar, hit flash, death animation
+- Isometric camera (orthographic, 40°/45°, smooth follow)
+- Player: camera-relative WASD, mouse aim, left-click shoot, Shift dash + i-frames
+- Enemy: chase AI, melee attack, world-space HP bar, hit flash, shrink-death
 - Wave spawner, health HUD, YOU DIED screen, R to restart
+- Git repo live, engine plan documented
 
 ---
 
-## Phase 1 — Combat Engine (make fights feel like Hades)
+## Phase 1 — Combat Engine
+### Make every hit feel like it lands
 
-This is the highest-leverage phase. Hades' combat feels incredible because of
-five mechanics working together. Everything else is secondary.
+This is the highest-leverage work. Hades' combat feels exceptional because of
+five mechanics working together. Nothing else matters until these are right.
 
-### 1A: Melee attack system
-- **What:** Left-click = sword slash (not just projectile). A fast 3-hit combo with distinct arc/timing per swing.
-- **Why:** Hades is primarily melee. The rhythm of light attacks is what makes combat feel physical.
-- **Template:** `MeleeAttack.cs` — hitbox active for N frames, combo counter, reset timer.
+**1A · Melee attack (3-hit combo)**
+- Left-click = sword swing, not projectile. Three swings per combo: fast → fast → heavy.
+- Each swing has a hitbox active for a specific number of frames, then closes.
+- Swing 3 does 2× damage and launches a knockback.
+- `MeleeAttack.cs` — hitbox timing, combo counter, combo reset on timeout.
 
-### 1B: Hit stop + screen shake
-- **What:** When you hit an enemy, the game freezes for 3–6 frames. Screen shakes slightly.
-- **Why:** This single mechanic makes hits feel like they *land*. Without it, combat feels like screensavers colliding.
-- **Template:** `CombatFeel.cs` — static singleton. `CombatFeel.HitStop(0.05f)` from anywhere.
+**1B · Hit stop**
+- On landing a hit: game freezes for 4–6 frames (0.06–0.1 seconds), then resumes.
+- This single mechanic makes hits feel physical. Without it, combat feels weightless.
+- `CombatFeel.cs` — static singleton. `CombatFeel.HitStop(frames)` callable from anywhere.
 
-### 1C: Knockback
-- **What:** Enemies stagger backward when hit. Player gets pushed back slightly when taking damage.
-- **Why:** Gives hits spatial weight. Also creates distance-management decisions.
-- **Template:** Add `knockbackForce` to damage events. `transform.position += dir * force`.
+**1C · Knockback**
+- Enemies stagger backward on hit. Distance scales with damage and hit type.
+- Player gets pushed back slightly when struck (creates spacing decisions).
+- Added to the damage event — no extra component needed.
 
-### 1D: Damage numbers
-- **What:** Floating text showing damage dealt, fades upward.
-- **Why:** Makes player progression visible. "+25" vs "+120" after an upgrade feels rewarding.
-- **Template:** `DamageNumber.cs` — spawned prefab, rises and fades over 0.8s.
+**1D · Floating damage numbers**
+- On hit: a number rises from the enemy and fades out over 0.6 seconds.
+- Color-coded: white = normal, yellow = critical, red = enemy hits player.
+- `DamageNumber.cs` — spawned object, animates itself, self-destructs.
 
-### 1E: Special attack (cast)
-- **What:** Right-click fires a slower, high-damage projectile or places an AOE.
-- **Why:** Hades always has a "cast" resource. Creates resource management in fights.
-- **Template:** `SpecialAttack.cs` — separate cooldown, distinct visual.
+**1E · Special / ranged attack**
+- Right-click: slower, high-damage projectile or short-range AOE depending on weapon.
+- Separate cooldown from primary. Consumes a resource (mana, stamina — TBD with story).
+- `SpecialAttack.cs` — decoupled from primary so each weapon overrides independently.
 
-**Deliverable:** A combat sandbox where fighting enemies feels punchy and reactive.
-
----
-
-## Phase 2 — Room System (structure of a run)
-
-A Hades run is a sequence of self-contained rooms. Each room is an arena —
-enemies spawn, you clear them, doors open, you pick a reward and move on.
-
-### 2A: Room template
-- **What:** A walled arena with 2–4 door slots. Enemies spawn on entry. Doors locked until clear.
-- **Template:** `Room.cs` — tracks enemy count, fires `OnRoomCleared` event.
-- **Scene:** `RoomTemplate.unity` — reusable prefab with walls, floor, spawn points, door slots.
-
-### 2B: Door / transition system
-- **What:** Doors appear after room clear. Player walks into a door → loads next room.
-- **Template:** `Door.cs` — holds `RoomType` (combat / shop / treasure / boss / rest).
-- **Visual:** Door shows an icon for what's behind it (sword = combat, coin = shop, etc.)
-
-### 2C: Dungeon graph (run layout)
-- **What:** Generates a simple graph of rooms per floor: linear with occasional branches.
-  ```
-  Start → Combat → Combat → [Shop OR Treasure] → Combat → Boss
-  ```
-- **Template:** `DungeonGenerator.cs` — builds the graph at run start, rooms load on demand.
-- **Not a full procedural engine** — fixed layouts per floor are fine for now, randomized later.
-
-### 2D: Room types
-| Type | What happens |
-|------|-------------|
-| Combat | Enemies spawn, clear to proceed |
-| Shop | Spend currency on upgrades |
-| Treasure | Free boon/item choice |
-| Rest | Restore health (limited per run) |
-| Boss | Named enemy, harder, ends the floor |
-| Start | Safe room between floors |
-
-**Deliverable:** A playable loop — enter room, fight, choose door, repeat until boss.
+**Milestone:** Combat sandbox where fighting one enemy feels satisfying on its own.
 
 ---
 
-## Phase 3 — Weapon System (swappable playstyles)
+## Phase 2 — Map & Level System
+### Replace arenas with explorable spaces
 
-Hades has 6 weapon types (sword, spear, bow, etc.), each with completely different
-feel. This is what makes runs feel distinct.
+Not small rooms. Proper maps with geography, hidden paths, and level transitions.
 
-### 3A: Weapon base class
-- **What:** Abstract `WeaponBase.cs` with `OnPrimaryAttack()`, `OnSpecialAttack()`, `OnDash()`.
-- Each weapon overrides these. The player script just calls the weapon — doesn't know which one.
+**2A · Map structure**
+- Each map is a Unity scene: larger than a room, designed by hand.
+- Has distinct zones within it (open areas, corridors, vertical drops, secret alcoves).
+- Camera bounds per zone — camera clamps to the zone the player is currently in,
+  then smoothly transitions when crossing into a new zone.
 
-### 3B: Starter weapons (3 archetypes)
-| Weapon | Primary | Special | Dash |
-|--------|---------|---------|------|
-| Sword | 3-hit melee combo | Spinning AOE | Short dash |
-| Bow | Charged ranged shot | Rain of arrows | Long dash |
-| Shield | Block + bash | Throw shield (bounces) | Dash + slam |
+**2B · Level transitions**
+- Trigger zones that load the next scene (async, with a loading fade).
+- State persists across transitions: player HP, inventory, active skills carry over.
+- `LevelTransition.cs` — trigger volume + target scene name + spawn point ID.
 
-### 3C: Weapon selection
-- Player picks a weapon at the start of each run from 3 random options.
-- Run starts only after weapon is chosen.
-- **Template:** `WeaponSelectUI.cs` — 3 cards with weapon name, description, and icon.
+**2C · Secret openings**
+- Destructible walls (hit N times to break), pressure plates, hidden switches.
+- Reveal passages to optional areas: bonus enemies, lore items, skill unlocks.
+- `DestructibleWall.cs`, `PressurePlate.cs` — both fire a Unity Event on activate,
+  so the designer connects them to whatever door/passage without code.
 
-**Deliverable:** 3 weapons that feel mechanically distinct. Player makes a meaningful choice at run start.
+**2D · Enemy territory zones**
+- Enemies belong to a zone. They stop chasing when the player leaves their zone.
+- Prevents enemies from pooling across the entire map.
+- `EnemyTerritory.cs` — a trigger volume; enemies check if player is still inside
+  before continuing pursuit.
 
----
+**2E · Minimap**
+- Simple top-down render texture showing explored vs unexplored zones.
+- Marks player position, level exits, and any revealed secrets.
+- Fog of war clears as player enters each zone.
 
-## Phase 4 — Boon / Upgrade System (run-to-run variety)
-
-Boons are what make every Hades run feel different. After each room you pick one
-upgrade from 3 options. They modify your existing abilities.
-
-### 4A: Boon data structure
-```
-Boon {
-  name: string
-  description: string
-  rarity: Common / Rare / Epic / Heroic
-  effect: BoonEffect (scriptable object)
-}
-```
-- **Template:** `BoonDefinition.cs` (ScriptableObject) — designers create boons without touching code.
-
-### 4B: Effect types (start with these 6)
-| Effect | What it does |
-|--------|-------------|
-| DamageMultiplier | +X% to all damage |
-| AttackSpeed | Primary fires X% faster |
-| DashDamage | Dash deals damage to enemies passed through |
-| ProjectilePierce | Projectiles pass through N enemies |
-| LifeOnKill | Restore N HP per kill |
-| AOERadius | Special attack area grows |
-
-### 4C: Boon selection UI
-- After room clear, show 3 random boons (weighted by rarity).
-- Player picks one. Applied immediately.
-- **Template:** `BoonSelectUI.cs` — 3 cards, highlight on hover, confirm on click.
-
-### 4D: Boon stack system
-- Player can hold multiple boons. They stack where logical, replace where exclusive.
-- **Template:** `BoonInventory.cs` — list of active effects, queried by combat scripts.
-
-**Deliverable:** Each run feels mechanically unique by room 3. Builds toward a "build."
+**Milestone:** A multi-zone map with at least one secret passage and one level exit
+that loads a second map with player state preserved.
 
 ---
 
-## Phase 5 — Enemy Variety (combat depth)
+## Phase 3 — Weapon System
+### Different weapons = different playstyles
 
-One enemy type makes combat solved in 30 seconds. Hades uses enemy *combinations*
-to create situations, not just harder versions of the same thing.
+**3A · Weapon base class**
+- `WeaponBase.cs` — abstract. Defines `PrimaryAttack()`, `SpecialAttack()`, `OnDash()`.
+- Player controller calls these methods. Doesn't know which weapon is equipped.
+- Swapping weapons is `player.EquipWeapon(newWeapon)` — one line.
 
-### 5A: Enemy base class
-- **What:** `EnemyBase.cs` — health, speed, attack damage, death reward, all configurable.
-- All specific enemies inherit from this. Same death animation, hit flash, HP bar.
+**3B · Starter weapon archetypes (3)**
 
-### 5B: Enemy archetypes (4 to start)
-| Archetype | Behaviour |
-|-----------|-----------|
-| Charger | Idle → locks on → sprints in a straight line, high damage |
-| Ranged | Keeps distance, fires slow projectiles at player |
-| Shielder | Walks toward player, blocks frontal attacks, must be hit from behind |
-| Bomber | Rushes player, explodes on contact or death, AOE damage |
+| Weapon | Primary | Special | Dash behaviour |
+|--------|---------|---------|----------------|
+| Sword | 3-hit melee combo | Spinning AOE slash | Short dash, leaves afterimage |
+| Bow | Charged shot (hold to power up) | Arrow rain (fires arc of 5) | Long dash, brief speed boost |
+| Shield | Bash + parry window | Shield throw (bounces off walls) | Dash + brief block on entry |
 
-### 5C: Boss template
-- Named enemy with 3 phases (HP thresholds change behaviour).
-- Intro animation (brief pause before fight starts — Hades does this).
-- **Template:** `BossEnemy.cs` — extends `EnemyBase`, adds phase transitions.
+**3C · Weapon acquisition**
+- Found in the world (chest, reward, quest), not randomly assigned.
+- Player can carry one equipped weapon + one stored. Swap with a key.
+- Designed to be extended: adding weapon 4 means one new class + one ScriptableObject.
 
-### 5D: Enemy spawner (room-aware)
-- Reads room's spawn points and difficulty rating.
-- Spawns combinations, not just quantities: "2 Chargers + 1 Ranged" is a puzzle.
-- **Template:** `EnemySpawner.cs` — takes a `WaveDefinition` ScriptableObject per room.
-
-**Deliverable:** Rooms that require different tactics based on what spawns.
+**Milestone:** All 3 weapons implemented and feel mechanically distinct.
 
 ---
 
-## Phase 6 — Meta-Progression (reason to keep playing)
+## Phase 4 — Progression System
+### Character growth through play and story
 
-This is what pulls players back after death. Hades calls it "the mirror." You earn
-a persistent currency each run that funds permanent upgrades.
+This replaces Hades' per-room boon selection entirely. Two parallel tracks:
 
-### 6A: Run state
-- **What:** All boons, weapons, HP at time of death. Reset on death.
-- **Template:** `RunState.cs` — singleton, persists during a run, wiped on death.
+**4A · Character level progression**
+- Killing enemies and completing objectives grants XP.
+- Leveling up gives one skill point to spend.
+- Skill tree: branching paths, each node is a `SkillNode` ScriptableObject.
+  Designer sets: name, description, cost, effect, prerequisites.
+- Effects use the same `BoonEffect` types from combat (damage %, attack speed, etc.)
+  so skills plug directly into the combat engine with no extra code.
+- `SkillTree.cs` + `SkillTreeUI.cs` — accessible from a pause/hub screen.
 
-### 6B: Persistent currency
-- Drop "shards" (name it whatever fits your game) from enemies and rooms.
-- **Two types:** run currency (resets on death) and meta currency (persists forever).
-- **Template:** `CurrencyManager.cs`
+**4B · Story-gated skill / boon unlocks**
+- Certain skills are locked behind story flags, not XP.
+- Example: "You helped the blacksmith → his weapon technique unlocks Armour Break."
+- `StoryFlag.cs` — a string key set by narrative events. Skills check for required flags.
+- Completely decoupled from story content: the engine checks flags, story systems set them.
+- This means story writers can gate skills without touching the skill tree code.
 
-### 6C: Between-run upgrade screen
-- Appears after death before next run starts.
-- Spend meta currency on permanent buffs: max HP, base damage, starting boon, etc.
-- **Template:** `MetaUpgradeScreen.cs` + `MetaUpgrade.cs` (ScriptableObject per upgrade)
+**4C · Penalty system**
+- *Structure TBD — to be designed with story context.*
+- Placeholder: on death, a consequence is applied (lose some XP, a skill is temporarily
+  disabled, an NPC reacts, a resource is reduced).
+- Engine hook is ready: `PlayerDeath` fires an event. Whatever the penalty system is,
+  it subscribes to that event. No combat code changes needed.
+- `PenaltyManager.cs` — empty subscriber shell, ready to be filled.
 
-### 6D: Save system
-- Saves meta currency and purchased upgrades between sessions.
-- **Template:** `SaveManager.cs` — JSON to `Application.persistentDataPath`.
+**4D · Inventory / loadout**
+- Player holds: 1 weapon, up to 4 active skills (mapped to keys), passive boons (unlimited).
+- `PlayerInventory.cs` — manages slots, validates prerequisites, handles equip/unequip.
+- UI: a simple grid screen accessible from pause.
 
-**Deliverable:** Death doesn't feel like a full reset. Each run makes the next one slightly easier.
+**Milestone:** Player levels up, unlocks a skill, and it visibly changes combat behaviour.
+Story flag manually set in Inspector triggers a locked skill to become available.
 
 ---
 
-## Phase 7 — Polish Layer (what separates feeling from fighting)
+## Phase 5 — Enemy Variety
+### Combat that requires decisions
 
-This phase makes the engine *feel* like Hades rather than just working like it.
+**5A · Enemy base class**
+- `EnemyBase.cs` — health, speed, XP value, attack damage, death loot, all Inspector-tunable.
+- All enemies inherit this. Hit flash, HP bar, death animation are automatic.
+- Adding a new enemy = new class (if unique behaviour) or just a new ScriptableObject
+  with different stats (if it's a reskin).
 
-### 7A: VFX framework
-- Hit sparks (small burst of particles on impact)
-- Death burst (larger explosion of particles)
-- Dash trail (ghosting effect behind player)
+**5B · Enemy archetypes (4 core)**
+
+| Archetype | Behaviour pattern |
+|-----------|------------------|
+| Stalker | Chases player, attacks on contact — the baseline |
+| Charger | Telegraphs with a pause, then sprints in a straight line |
+| Ranged | Keeps distance, fires slow projectiles, retreats when player closes in |
+| Shielder | Blocks frontal attacks, weak from behind — forces flanking |
+
+**5C · Enemy combinations**
+- Rooms and zones are authored with specific enemy mixes, not random spawns.
+- A Shielder + two Ranged enemies behind it is a puzzle. Designer places these by hand.
+- `SpawnGroup.cs` ScriptableObject: list of enemy types + positions relative to a spawn point.
+
+**5D · Boss template**
+- `BossEnemy.cs` — extends EnemyBase, adds phase thresholds.
+- At each HP threshold, behaviour changes (new attack pattern, speed increase, spawns adds).
+- Intro sequence: brief camera pan to boss, pause, fight begins.
+- Fully data-driven: phases defined in a ScriptableObject, not hardcoded.
+
+**Milestone:** A zone with Stalkers + Shielders + one Ranged enemy that requires
+the player to change approach. A boss with two phases.
+
+---
+
+## Phase 6 — Meta-Progression
+### What persists, what resets, what changes
+
+*The penalty system design lives here but remains a placeholder until the story
+structure is clearer. The engine scaffolding is built now so it can be filled in later.*
+
+**6A · Persistent world state**
+- What permanently changes: doors opened, NPCs met, story flags set, levels unlocked.
+- Saved to disk. Never resets.
+- `WorldState.cs` — dictionary of string keys → values. `WorldState.Set("key", value)`.
+
+**6B · Run state (within a session)**
+- What resets on death or on starting a new session (TBD with penalty design):
+  could be XP since last checkpoint, temporary buffs, resource counts.
+- `RunState.cs` — session-scoped, cleared on defined events.
+
+**6C · Penalty system (placeholder)**
+- The hook: `GameEvents.OnPlayerDeath` → `PenaltyManager.ApplyPenalty()`
+- What `ApplyPenalty()` does is entirely story/design-driven.
+- Could be: checkpoint rollback, skill lock, narrative consequence, resource drain.
+- Engine is ready. Design fills it in.
+
+**6D · Save / load**
+- Auto-save on level transition and on returning to hub.
+- `SaveManager.cs` — serialises WorldState + PlayerInventory + skill tree state to JSON.
+- Single save slot for now. Multiple slots trivial to add later.
+
+**Milestone:** Player progresses through two maps, closes the game, reopens —
+position, inventory, and skill unlocks are exactly where they were left.
+
+---
+
+## Phase 7 — Polish Layer
+### What separates "working" from "feeling right"
+
+**7A · VFX framework**
+- Hit sparks on melee impact
+- Death burst (particles expand from enemy position)
+- Dash afterimage (ghost trail of player sprite)
 - Projectile trail
 
-### 7B: Audio manager
-- `AudioManager.cs` — singleton, plays SFX by name, manages music layers.
-- Hades has dynamic music that layers instruments as combat intensifies.
-- Minimum: background track + combat track that crossfades on room enter.
+**7B · Audio manager**
+- `AudioManager.cs` — singleton. `AudioManager.Play("sword_swing")` from anywhere.
+- Separate channels: music, SFX, ambient.
+- Music layering: a quiet ambient layer swells when enemies are nearby.
 
-### 7C: Camera polish
-- Room-enter zoom-out (camera pulls back slightly when entering new room)
-- Death zoom-in (slow zoom on player death)
-- Hit zoom pulse (very subtle, 1 frame)
+**7C · Camera behaviours**
+- Zone boundary clamp (camera stops at zone edge)
+- Boss intro pan (scripted camera movement)
+- Death slow-motion + zoom (Time.timeScale drop + FOV change over 0.5 seconds)
+- Hit pulse (one-frame micro-shake on successful hit)
 
-### 7D: UI polish
-- Animated health bar (smooth drain, not snap)
-- Boon card animations (slide in on select)
-- Room transition (fade to black, fade in)
-
----
-
-## Phase 8 — Content Templates (handoff to game design)
-
-These are the blank templates your game's content plugs into.
-By this point, a designer can add content without touching engine code.
-
-### 8A: Room template kit
-- Prefab set: walls, floors, pillars, hazard zones (lava, spikes)
-- Snap grid for fast level design
-- Door placement tool
-
-### 8B: Enemy template
-- Duplicate `EnemyBase`, set stats in Inspector, done.
-- No code required for basic enemy types.
-
-### 8C: Boon template
-- New ScriptableObject → fill in name, description, effect type, values → done.
-- Designer creates boons without opening a script.
-
-### 8D: Weapon template
-- Implement `OnPrimaryAttack()` and `OnSpecialAttack()` in a new class.
-- Visual model swaps automatically.
+**7D · UI polish**
+- Health bar: smooth drain animation (bar lags behind actual value)
+- Skill unlock: flash + sound cue when a new skill becomes available
+- Level transition: fade to black, level name card, fade in
 
 ---
 
-## Build order (what to do when)
+## Phase 8 — Content Pipeline
+### Tools so you can build game content without touching engine code
+
+By this phase, adding content is data entry, not programming.
+
+**8A · Enemy creation**
+- Duplicate any EnemyBase ScriptableObject, set stats, assign to a spawn point. Done.
+
+**8B · Skill / boon creation**
+- New ScriptableObject: name, description, effect type, value, prerequisites, story flag gate.
+- Appears in skill tree automatically.
+
+**8C · Map authoring**
+- Tileable floor/wall prefabs on a snap grid.
+- Zone boundary volumes placed visually.
+- Spawn groups placed as prefabs with the enemy list set in Inspector.
+
+**8D · Weapon creation**
+- Implement two methods (`PrimaryAttack`, `SpecialAttack`) in a new class.
+- Assign a ScriptableObject with stats and name.
+- Appears in the weapon selection / inventory system automatically.
+
+---
+
+## Build order
 
 ```
-Phase 1 (Combat feel)     ← highest value, do first
-Phase 2 (Room system)     ← needed to have a "game"
-Phase 3 (Weapons)         ← makes runs feel different
-Phase 4 (Boons)           ← makes runs feel replayable
-Phase 5 (Enemy variety)   ← makes combat require thinking
-Phase 6 (Meta-progression)← makes death feel like progress
-Phase 7 (Polish)          ← can happen in parallel with 5+6
-Phase 8 (Content tools)   ← final step, for your team to use
+Phase 1 — Combat feel          ← start here, always
+Phase 2 — Maps & levels        ← gives combat a world to live in
+Phase 3 — Weapon system        ← makes playstyle a choice
+Phase 4 — Progression          ← XP, skill tree, story flags
+Phase 5 — Enemy variety        ← combat needs problems to solve
+Phase 6 — Meta / save          ← makes the game a continuous experience
+Phase 7 — Polish               ← runs in parallel from Phase 4 onward
+Phase 8 — Content pipeline     ← final step, frees you to make the game
 ```
 
-Phases 1–2 = a playable combat loop.
-Phases 1–4 = a full roguelike run.
-Phases 1–6 = a complete engine.
-Phases 7–8 = production-ready.
+**Phases 1–2** = playable combat in a real space.
+**Phases 1–4** = a complete gameplay loop.
+**Phases 1–6** = a shippable engine.
+**Phases 7–8** = production ready.
 
 ---
 
-## What stays out of scope (intentionally)
+## Solo dev principles (you + Claude Max)
 
-- Story, characters, lore, dialogue — not our job yet
-- Art direction — we use primitives until character design is locked
-- Multiplayer — single-player only
-- Platform ports — macOS/Windows PC first
-- Full procedural generation — hand-crafted room layouts, procedurally assembled
-
----
-
-## File structure (target)
-
-```
-Assets/
-  Scripts/
-    Combat/         ← attack, damage, hit stop, knockback
-    Player/         ← controller, weapons, boons
-    Enemies/        ← base class, archetypes, boss
-    Rooms/          ← room, doors, dungeon generator
-    Systems/        ← save, currency, run state
-    UI/             ← HUD, boon select, meta screen
-    VFX/            ← hit effects, trails, audio
-  Prefabs/
-    Enemies/
-    Rooms/
-    UI/
-    VFX/
-  ScriptableObjects/
-    Weapons/
-    Boons/
-    Enemies/
-    Upgrades/
-  Scenes/
-    MainMenu
-    GameLoop        ← the actual dungeon
-    BetweenRuns     ← upgrade screen
-Docs/
-  ENGINE-PLAN.md    ← this file
-```
+- **One system at a time.** Finish Phase 1 before touching Phase 2.
+- **ScriptableObjects for all data.** New enemy, weapon, skill = no code.
+- **Engine events over direct references.** `GameEvents.OnPlayerDeath` not `FindObjectOfType<PenaltyManager>()`.
+- **Placeholder > nothing.** Penalty system TBD? Ship the hook now, fill it later.
+- **Document as you go.** Update this file when a phase completes or a decision changes.
 
 ---
 
-*Last updated: MVP complete. Phase 1 next.*
+## What's explicitly out of scope
+
+- Story, characters, dialogue, lore — parallel track, not this repo yet
+- Art assets — primitives until visual direction is locked
+- Multiplayer
+- Mobile / console ports
+- Full procedural generation (hand-crafted maps, procedurally populated)
+- The penalty system specifics — engine hook ready, design TBD
+
+---
+
+*Status: MVP complete. Phase 1 next.*
