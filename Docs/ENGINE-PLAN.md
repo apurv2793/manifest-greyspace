@@ -24,41 +24,53 @@
 
 ## Game structure (confirmed)
 
+The world is a network of hub areas connected to each other. Each hub is
+explorable in its own right — not a menu, not a lobby. Missions branch off
+from hubs. Death in a mission returns you to the last hub you were in.
+
 ```
-┌─────────────────────────────────────────────┐
-│                  HUB WORLD                  │
-│  Persistent space. Always returned to.      │
-│  NPCs · Skill tree · Inventory · Mission    │
-│  board · Story conversations · Secrets      │
-└────────────┬────────────────────────────────┘
-             │ enter mission
-             ▼
-┌─────────────────────────────────────────────┐
-│               MISSION SCENE                 │
-│  Self-contained. Discrete objective.        │
-│  Multi-zone map with secrets + transitions  │
-│  Enemies · Loot · Story moments             │
-└────────────┬───────────────┬────────────────┘
-             │ complete       │ die
-             ▼               ▼
-        return to hub    penalty applied
-                         then return to hub
+        [Mission]   [Mission]
+            ↑           ↑
+[Mission] ← HUB A ←→ HUB B → [Mission]
+                ↕
+             HUB C → [Mission]
+                ↕
+             HUB D ←→ HUB E
+                          ↓
+                       [Mission]
 ```
+
+**Hub areas** — persistent, explorable spaces with:
+- Geography (paths, verticality, hidden corners)
+- NPCs, story conversations, vendors
+- Skill tree / inventory access points
+- Visible transitions to adjacent hubs and branching missions
+- Their own secrets and optional content
+
+**Hub-to-hub transitions** — physical exits in the world (a gate, a path,
+a lift, a portal). Crossing one loads the next hub area. The player walks
+between hubs; there is no fast travel menu unless explicitly designed in.
+
+**Missions** — discrete scenes branching off a hub:
+- Player enters via a trigger in the hub world (a door, an NPC, a portal)
+- Self-contained: own map, enemies, objective
+- On complete or on death: unload mission, return to the hub it branched from
 
 **Mission types** (selective — not all missions are story missions):
 
 | Type | Gated by | Returns |
 |------|----------|---------|
 | Story mission | Story flag | Narrative progress, skill unlock |
-| Side mission | Available from hub board | XP, loot, optional lore |
+| Side mission | Discoverable in hub | XP, loot, optional lore |
 | Exploration | World discovery | Secrets, passive boons |
 | *More TBD* | | |
 
 **Key rules the engine enforces:**
-- Player state (HP, inventory, skills) persists hub → mission → hub
-- Missions are Unity scenes loaded additively over a persistent hub state
-- Death in a mission triggers the penalty system, then returns to hub
+- Player state (HP, inventory, skills) persists across all hub and mission transitions
+- Each hub scene is independently loadable — no hub depends on another being loaded
+- Death in a mission returns to the hub that mission branched from
 - Story flags are the only hard gate; everything else is opt-in
+- Fast travel: not assumed — can be added as a story-unlocked feature later
 
 ---
 
@@ -114,20 +126,29 @@ five mechanics working together. Nothing else matters until these are right.
 Two distinct scene types: the hub (always persistent) and missions (discrete, loaded on demand).
 
 **2A · Hub world scene**
-- A proper explorable space, not a menu. Player walks around it.
-- Contains: mission entry points (doors, portals, NPCs), skill tree access,
-  inventory screen, any story-critical NPCs.
-- Persistent: NPC states, opened secrets, story flags all reflected visually.
-- `HubManager.cs` — initialises hub state from save on load, keeps it in sync.
+- A proper explorable space with geography — paths, elevation, hidden corners.
+- Contains: exits to adjacent hubs, mission entry points, NPCs, interactables.
+- Persistent state: opened secrets, NPC dialogue progress, story flags reflected visually.
+- `HubManager.cs` — initialises hub from save on load, keeps state in sync.
+- Each hub is independently loadable. No hub scene depends on another being active.
 
-**2B · Mission entry / exit**
-- Mission entry: a trigger zone in the hub (a door, a portal, an NPC conversation).
-  Shows mission info card (name, type, suggested level) before confirming.
+**2B · Hub-to-hub transitions**
+- Physical exits in the hub world (a gate, a lift, a path, a portal).
+- Walking into an exit: save current hub state → async load next hub scene →
+  spawn player at the matching entry point in the new hub.
+- Bidirectional: every exit in Hub A that leads to Hub B has a matching entry in Hub B.
+- `HubTransition.cs` — trigger volume + target hub scene + target spawn point ID.
+- `WorldGraph.cs` — ScriptableObject defining which hubs connect to which.
+  Designer adds connections without touching scene files.
+
+**2C · Mission entry / exit**
+- Mission entry: trigger in a hub (door, NPC, portal). Shows mission info card before confirming.
 - On confirm: save hub state → async load mission scene → spawn player at mission start.
-- Mission exit: objective complete → exit trigger → unload mission → restore hub →
-  apply rewards → trigger any story flag changes.
-- `MissionLoader.cs` — handles both directions. `MissionDefinition` ScriptableObject
-  holds scene name, spawn point, mission type, story flag requirement, rewards.
+- On complete or death: unload mission → restore the hub this mission branched from →
+  apply rewards → trigger story flag changes.
+- `MissionLoader.cs` — handles both directions.
+- `MissionDefinition` ScriptableObject: scene name, parent hub, spawn point,
+  mission type, story flag requirement, rewards.
 
 **2C · Mission scene structure**
 - Each mission is its own Unity scene: hand-crafted, multi-zone.
