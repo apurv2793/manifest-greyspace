@@ -95,13 +95,13 @@ Track which features have gone through the coordination loop:
 
 | Feature | Status | Best model | Score |
 |---------|--------|------------|-------|
-| WeaponBase.cs | ✅ applied | GLM 5.1 (NIM) | 0.65 → fixed |
-| WeaponPickup.cs | ✅ applied | GLM 5.1 (NIM) | 0.82 → fixed |
+| WeaponBase.cs | parked | GLM 5.1 (NIM) | 0.65 — orphaned; ComboData carries weapons instead, migrate later |
+| WeaponPickup.cs | ✅ applied (rewired to ComboData, WeaponBase had no consumer) | GLM 5.1 (NIM) | 0.82 → fixed |
 | EnemyBase.cs | ✅ applied | GLM 5.1 (NIM) | 0.72 → fixed |
 | ChargerEnemy.cs | ✅ applied | GLM 5.1 (NIM) | 0.78 → fixed |
 | RangedEnemy.cs | ✅ applied | GLM 5.1 (NIM) | 0.72 → fixed |
-| ShielderEnemy.cs | pending | — | — |
-| SpawnGroup.cs | pending | — | — |
+| ShielderEnemy.cs | ✅ applied | GLM 5.1 (NIM) | 0.88 vs Groq 0.2 (rejected — broken Invoke/GetComponentsInChildren) |
+| SpawnGroup.cs | ✅ applied, wired into WaveLoop | GLM 5.1 (NIM) | 0.85 vs Groq 0.4 (rejected — missing using UnityEngine) |
 | SkillNode.cs | pending | — | — |
 | SaveManager.cs | pending | — | — |
 | VFXManager.cs | pending | — | — |

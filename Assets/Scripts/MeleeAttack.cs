@@ -42,14 +42,17 @@ public class MeleeAttack : MonoBehaviour
                   (h.type == AttackType.Melee ? "melee" : "projectile") +
                   "  ×" + h.damageMultiplier);
 
-        StartCoroutine(ExecuteHit(h, _step));
+        StartCoroutine(ExecuteHit(h, _step, heavy));
         _step = (_step + 1 >= comboData.steps.Length) ? 0 : _step + 1;
     }
 
-    IEnumerator ExecuteHit(HitConfig h, int step)
+    IEnumerator ExecuteHit(HitConfig h, int step, bool heavy)
     {
         _locked = true;
         bool isLast = (step == comboData.steps.Length - 1) || h.inputWindow <= 0f;
+
+        if (h.type == AttackType.Melee)
+            StartCoroutine(ShowArcTelegraph(h, heavy));
 
         yield return new WaitForSeconds(h.windupTime);
 
@@ -81,6 +84,51 @@ public class MeleeAttack : MonoBehaviour
             hitAny = true;
         }
         if (hitAny) CombatFeel.HitStop(h.hitstopFrames);
+    }
+
+    // Fan-shaped range indicator: thin white arc for light attacks, thick orange for heavy.
+    // Shows the true hit range/angle from DoMeleeHit so the player can read reach at a glance.
+    IEnumerator ShowArcTelegraph(HitConfig h, bool heavy)
+    {
+        const int segments = 16;
+        GameObject go = new GameObject("AttackArc");
+        go.transform.SetParent(transform, false);
+        go.transform.localPosition = Vector3.up * 1.0f;
+        go.transform.localRotation = Quaternion.identity;
+
+        LineRenderer lr = go.AddComponent<LineRenderer>();
+        lr.useWorldSpace = false;
+        lr.loop = true;
+        lr.positionCount = segments + 2;
+        lr.widthMultiplier = heavy ? 0.07f : 0.03f;
+
+        GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        Material mat = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
+        Destroy(tmp);
+        Color col = heavy ? new Color(1f, 0.45f, 0.1f) : new Color(1f, 1f, 1f);
+        mat.SetColor("_BaseColor", col); mat.color = col;
+        lr.material = mat;
+
+        float half = h.arcAngle * 0.5f;
+        Vector3[] pts = new Vector3[segments + 2];
+        pts[0] = Vector3.zero;
+        for (int i = 0; i <= segments; i++)
+        {
+            float ang = Mathf.Lerp(-half, half, i / (float)segments);
+            pts[i + 1] = (Quaternion.Euler(0, ang, 0) * Vector3.forward) * h.range;
+        }
+        lr.SetPositions(pts);
+
+        float duration = h.windupTime + h.hitboxDuration;
+        float elapsed = 0f;
+        while (elapsed < duration && go != null)
+        {
+            elapsed += Time.deltaTime;
+            Color c = col; c.a = Mathf.Clamp01(1f - elapsed / duration);
+            lr.startColor = c; lr.endColor = c;
+            yield return null;
+        }
+        if (go != null) Destroy(go);
     }
 
     void SpawnProjectile(HitConfig h)

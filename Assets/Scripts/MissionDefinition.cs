@@ -12,4 +12,8 @@ public class MissionDefinition : ScriptableObject
     public string lockedReason;
     [TextArea(2, 4)]
     public string description;
+
+    // Per-wave composition; index 0 = wave 1. Leave empty to use the default
+    // procedural Stalker spawn (2+wave count, scaled stats).
+    public SpawnGroup[] waveSpawns;
 }

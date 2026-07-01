@@ -1,9 +1,10 @@
 using UnityEngine;
 
-// GLM 5.1 via Manifest OS (call_id 165) — corrected: SetParent(transform, false) on both children
+// GLM 5.1 via Manifest OS (call_id 165) — corrected: SetParent(transform, false) on both children,
+// weaponData is ComboData (matches GunCharacter's actual carry system, not the unused WeaponBase abstraction)
 public class WeaponPickup : MonoBehaviour
 {
-    public WeaponBase weaponPrefab;
+    public ComboData weaponData;
     public string     weaponDisplayName;
     public Color      orbColor;
     public float      interactRadius = 2f;
@@ -15,7 +16,8 @@ public class WeaponPickup : MonoBehaviour
 
     void Start()
     {
-        playerTransform = GameObject.FindWithTag("Player")?.transform;
+        GunCharacter pc = FindObjectOfType<GunCharacter>();
+        playerTransform = pc != null ? pc.transform : null;
 
         GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
         Material   src = tmp.GetComponent<Renderer>().sharedMaterial;
@@ -60,7 +62,7 @@ public class WeaponPickup : MonoBehaviour
         if (playerTransform == null) return;
         GunCharacter gc = playerTransform.GetComponent<GunCharacter>();
         if (gc != null)
-            gc.EquipWeapon(Instantiate(weaponPrefab, gc.transform));
+            gc.PickupWeapon(weaponData);
         Destroy(gameObject);
     }
 }

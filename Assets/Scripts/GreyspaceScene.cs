@@ -181,8 +181,20 @@ public class GreyspaceScene : MonoBehaviour
         if (player && player.isDead) { player.isDead = false; player.health = player.maxHealth; }
         if (statusText) { statusText.color = new Color(0.8f, 0.07f, 0.07f); statusText.text = ""; }
 
+        SpawnWeaponPickup(ComboData.Bow(), new Color(1f, 0.85f, 0.2f), new Vector3(4f, 0, 4f));
+
         StartCoroutine(WaveLoop());
         Debug.Log("Mission: " + def.displayName);
+    }
+
+    void SpawnWeaponPickup(ComboData data, Color color, Vector3 pos)
+    {
+        GameObject go = new GameObject("WeaponPickup_" + data.name);
+        go.transform.position = pos;
+        WeaponPickup wp = go.AddComponent<WeaponPickup>();
+        wp.weaponData = data;
+        wp.weaponDisplayName = data.name;
+        wp.orbColor = color;
     }
 
     void BuildArenaFloor()
@@ -204,17 +216,40 @@ public class GreyspaceScene : MonoBehaviour
             if (waveText) waveText.text = $"Wave {wave} / {totalWaves}";
             Debug.Log($"Wave {wave} starting");
 
-            int count = 2 + wave;
+            SpawnGroup group = (currentMission.waveSpawns != null && wave - 1 < currentMission.waveSpawns.Length)
+                ? currentMission.waveSpawns[wave - 1] : null;
             Vector3 origin = playerGO ? playerGO.transform.position : Vector3.zero;
-            for (int i = 0; i < count; i++)
+
+            if (group != null)
             {
-                float angle = i * (360f / count);
-                float r = 9f + Random.Range(0f, 4f);
-                SpawnEnemy(origin + new Vector3(Mathf.Sin(angle * Mathf.Deg2Rad) * r, 0,
-                                                Mathf.Cos(angle * Mathf.Deg2Rad) * r));
+                int total = group.TotalEnemyCount();
+                int spawned = 0;
+                foreach (SpawnGroup.EnemyEntry entry in group.entries)
+                {
+                    for (int i = 0; i < entry.count; i++)
+                    {
+                        float angle = spawned * (360f / Mathf.Max(total, 1));
+                        float r = 9f + Random.Range(0f, 4f);
+                        Vector3 pos = origin + new Vector3(Mathf.Sin(angle * Mathf.Deg2Rad) * r, 0,
+                                                           Mathf.Cos(angle * Mathf.Deg2Rad) * r);
+                        SpawnFromPrefab(entry.enemyPrefab, pos);
+                        spawned++;
+                    }
+                }
+            }
+            else
+            {
+                int count = 2 + wave;
+                for (int i = 0; i < count; i++)
+                {
+                    float angle = i * (360f / count);
+                    float r = 9f + Random.Range(0f, 4f);
+                    SpawnEnemy(origin + new Vector3(Mathf.Sin(angle * Mathf.Deg2Rad) * r, 0,
+                                                    Mathf.Cos(angle * Mathf.Deg2Rad) * r));
+                }
             }
 
-            while (!playerDead && FindObjectsOfType<GunEnemy>().Length > 0)
+            while (!playerDead && (FindObjectsOfType<GunEnemy>().Length + FindObjectsOfType<EnemyBase>().Length) > 0)
                 yield return new WaitForSeconds(0.4f);
 
             if (!playerDead)
@@ -249,6 +284,15 @@ public class GreyspaceScene : MonoBehaviour
         en.health      = 20 + wave * 12;
         en.speed       = 2.2f + wave * 0.22f;
         en.attackDamage = 8 + wave * 2;
+    }
+
+    // Prefab carries its own EnemyBase-derived component with stats pre-set in the Inspector.
+    void SpawnFromPrefab(GameObject prefab, Vector3 pos)
+    {
+        if (prefab == null) { SpawnEnemy(pos); return; }
+        GameObject e = Instantiate(prefab, pos, Quaternion.identity);
+        EnemyBase en = e.GetComponent<EnemyBase>();
+        if (en != null && playerGO) en.player = playerGO.transform;
     }
 
     // ── Callbacks from GunCharacter ───────────────────────────────────────────
