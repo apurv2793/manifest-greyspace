@@ -37,6 +37,10 @@ public class GreyspaceScene : MonoBehaviour
 
     IEnumerator LevelUpFlash()
     {
+        AudioManager.Play("level_up");
+        if (playerGO != null)
+            VFXManager.Spawn(EffectType.LevelUpBurst, playerGO.transform.position, new Color(1f, 0.85f, 0.1f));
+
         if (levelText == null) yield break;
         Color orig = levelText.color;
         levelText.color = new Color(1f, 0.9f, 0.1f);
@@ -255,6 +259,7 @@ public class GreyspaceScene : MonoBehaviour
 
             if (!playerDead)
             {
+                AudioManager.Play("wave_clear");
                 if (waveText) waveText.text = $"Wave {wave} cleared!";
                 yield return new WaitForSeconds(2f);
             }

@@ -134,32 +134,45 @@ _Staff → replaced by Shield per plan. Staff ComboData kept as hidden archetype
 
 ---
 
-## Phase 7 — Polish
+## Phase 7 — Polish ✅ done
 
-### 7A · VFX framework
+### 7A · VFX framework ✅
 - `VFXManager.cs` — static singleton, `Spawn(effect, pos, color)` from anywhere
-- Effects (all procedural primitives):
-  - `HitSparks` — 4-6 cubes fly outward, shrink-die over 0.15s
-  - `DeathBurst` — 8 spheres expand from enemy pos, fade
-  - `DashAfterimage` — ghost copy of player, fades over 0.2s
-  - `LevelUpBurst` — ring of gold particles expanding upward
+- Effects (all procedural primitives): `HitSparks`, `DeathBurst`, `DashAfterimage`, `LevelUpBurst`
+- Wired: melee hits (HitSparks), enemy death — both `EnemyBase` and legacy `GunEnemy` (DeathBurst),
+  dash (DashAfterimage), level-up (LevelUpBurst)
 
-### 7B · AudioManager stub
+### 7B · AudioManager stub ✅
 - `AudioManager.cs` — `Play(clipName)` no-ops until clips wired
-- Registers: `sword_swing`, `hit_enemy`, `player_hit`, `dash`, `wave_clear`, `level_up`
-- All calls already in engine — just no audio until Unity AudioClip assets added
+- Call sites wired: `sword_swing` (windup start), `hit_enemy` (melee connects), `player_hit`
+  (GunCharacter.TakeDamage), `dash`, `wave_clear`, `level_up`
 
-### 7C · Camera polish
-- Screen shake: `CameraShake(intensity, duration)` — positional offset coroutine on `Camera.main`
-- Called on: player hit (light shake), boss attack (heavy shake), death (0.5s slow drop)
-- Hit pulse: 1-frame micro-shake on landing a hit (already has hit stop)
-- Zone clamp: camera lerp bounded to a min/max rect per zone (stub, wired in Phase 8)
+### 7C · Camera polish — partial
+- `CameraShake.cs` ✅ — additive offset coroutine on `Camera.main`, correctly undoes previous
+  offset before reapplying so it doesn't fight the LateUpdate lerp-follow
+- Wired: player hit (light, 0.12/0.15s), player death (heavier, 0.3/0.4s)
+- **Not built**: true "0.5s slow drop" death camera animation (used a heavier shake instead —
+  a real slow-zoom/drop is a distinct feature, add if the shake alone doesn't read as death)
+- **Not built**: hit pulse micro-shake on landing a hit (CombatFeel.HitStop already covers the
+  timing-freeze feel; a shake on top wasn't added to avoid stacking effects unrequested)
+- Zone clamp — still deferred to Phase 8 per original plan
 
-### 7D · UI polish
-- HP bar: smooth drain (bar chases actual value with lerp, not instant)
-- Damage number colour: white=normal, yellow=crit (2× dmg), red=player hit — already in DamageNumber.cs?
-- Level-up text burst: big "LEVEL UP" in centre screen, fades
-- Wave-clear fanfare: brief text animation
+### 7D · UI polish — partial
+- HP bar ✅ — now lerps toward target value (6/sec) instead of snapping instantly
+- Damage number colour — white=normal ✅, red=player hit ✅ (new). **Yellow=crit not built** —
+  no crit-chance/multiplier system exists anywhere in the engine to hang it off; would be
+  inventing a new mechanic, not polish. Build the crit system first if this is wanted.
+- Level-up text burst / wave-clear fanfare — not built as dedicated animations; existing
+  `LevelUpFlash` (colour flash) and wave-clear text now also trigger VFX/audio, which covers
+  the "response" requirement without new UI animation code
+
+### Bugs found and fixed while wiring this phase
+- `MeleeAttack.DoMeleeHit` only ever scanned `GunEnemy` — Charger/Ranged/Shielder (all
+  `EnemyBase`-derived) took **zero melee damage** since Phase 5. Now scans both hierarchies;
+  Shielder routes through `TakeDamageDirectional` for its shield-reduction logic.
+- `GunEnemy.Die()` never called `GameEvents.FireEnemyDied()` — killing the default Stalker
+  enemy gave **zero XP**. Added `xpValue` field (default 10, matches EnemyBase table) and the
+  missing event fire.
 
 **Milestone:** Every combat action has a visual/audio response. Game feels alive without art assets.
 

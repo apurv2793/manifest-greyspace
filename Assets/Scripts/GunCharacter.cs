@@ -163,7 +163,10 @@ public class GunCharacter : MonoBehaviour
         DashInput();
         WeaponSwitch();
         if (healthFill != null)
-            healthFill.fillAmount = Mathf.Max(0f, (float)health / maxHealth);
+        {
+            float target = Mathf.Max(0f, (float)health / maxHealth);
+            healthFill.fillAmount = Mathf.Lerp(healthFill.fillAmount, target, 6f * Time.deltaTime);
+        }
     }
 
     void LateUpdate()
@@ -270,6 +273,8 @@ public class GunCharacter : MonoBehaviour
         Vector3 right = cam.right; right.y = 0; right.Normalize();
         dashDir = (fwd * v + right * h).normalized;
         if (dashDir == Vector3.zero) dashDir = transform.forward;
+        AudioManager.Play("dash");
+        VFXManager.Spawn(EffectType.DashAfterimage, transform.position, new Color(0.6f, 0.8f, 1f));
         StartCoroutine(DoDash());
     }
 
@@ -292,6 +297,9 @@ public class GunCharacter : MonoBehaviour
         if (isDead || invincible) return;
         health -= dmg;
         Debug.Log("Player HP: " + health + "/" + maxHealth);
+        DamageNumber.Spawn(transform.position + Vector3.up * 2f, dmg, new Color(0.95f, 0.2f, 0.2f));
+        AudioManager.Play("player_hit");
+        CameraShake.Shake(0.12f, 0.15f);
         if (force > 0f)
         {
             Vector3 dir = transform.position - sourcePos; dir.y = 0;
@@ -329,6 +337,7 @@ public class GunCharacter : MonoBehaviour
     {
         isDead = true;
         Debug.Log("GunCharacter: Player died.");
+        CameraShake.Shake(0.3f, 0.4f);
         if (scene != null) scene.OnPlayerDied();
     }
 }

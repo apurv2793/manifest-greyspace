@@ -80,6 +80,7 @@ public abstract class EnemyBase : MonoBehaviour
     {
         isDead = true;
         GameEvents.FireEnemyDied(xpValue);
+        VFXManager.Spawn(EffectType.DeathBurst, transform.position + Vector3.up * 0.8f, new Color(0.8f, 0.2f, 0.2f));
         if (hpBarBg)   hpBarBg.SetActive(false);
         if (hpBarFill) hpBarFill.SetActive(false);
 

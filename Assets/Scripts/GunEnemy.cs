@@ -8,6 +8,7 @@ public class GunEnemy : MonoBehaviour
     public int health = 30;
     public int attackDamage = 10;
     public float attackCooldown = 1.1f;
+    public int xpValue = 10;
 
     int maxHealth;
     float nextAttack;
@@ -169,7 +170,8 @@ public class GunEnemy : MonoBehaviour
     IEnumerator Die()
     {
         isDead = true;
-        Debug.Log("Enemy killed!");
+        GameEvents.FireEnemyDied(xpValue);
+        VFXManager.Spawn(EffectType.DeathBurst, transform.position + Vector3.up * 0.8f, new Color(0.8f, 0.2f, 0.2f));
         float t = 0; Vector3 s0 = transform.localScale;
         while (t < 0.28f) { t += Time.deltaTime; transform.localScale = Vector3.Lerp(s0, Vector3.zero, t / 0.28f); yield return null; }
         Destroy(gameObject);

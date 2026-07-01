@@ -52,7 +52,10 @@ public class MeleeAttack : MonoBehaviour
         bool isLast = (step == comboData.steps.Length - 1) || h.inputWindow <= 0f;
 
         if (h.type == AttackType.Melee)
+        {
             StartCoroutine(ShowArcTelegraph(h, heavy));
+            AudioManager.Play("sword_swing");
+        }
 
         yield return new WaitForSeconds(h.windupTime);
 
@@ -71,6 +74,8 @@ public class MeleeAttack : MonoBehaviour
     void DoMeleeHit(HitConfig h)
     {
         bool hitAny = false;
+        int dmg = Mathf.RoundToInt(comboData.baseDamage * h.damageMultiplier);
+
         foreach (GunEnemy e in FindObjectsOfType<GunEnemy>())
         {
             Vector3 toE = e.transform.position - transform.position;
@@ -78,12 +83,33 @@ public class MeleeAttack : MonoBehaviour
             if (toE.magnitude > h.range) continue;
             if (Vector3.Angle(transform.forward, toE) > h.arcAngle * 0.5f) continue;
 
-            int dmg = Mathf.RoundToInt(comboData.baseDamage * h.damageMultiplier);
             e.TakeDamage(dmg, transform.position, h.knockbackForce);
             DamageNumber.Spawn(e.transform.position + Vector3.up * 2.3f, dmg, Color.white);
+            VFXManager.Spawn(EffectType.HitSparks, e.transform.position + Vector3.up * 1f, Color.white);
             hitAny = true;
         }
-        if (hitAny) CombatFeel.HitStop(h.hitstopFrames);
+
+        foreach (EnemyBase e in FindObjectsOfType<EnemyBase>())
+        {
+            Vector3 toE = e.transform.position - transform.position;
+            toE.y = 0;
+            if (toE.magnitude > h.range) continue;
+            if (Vector3.Angle(transform.forward, toE) > h.arcAngle * 0.5f) continue;
+
+            ShielderEnemy shielder = e as ShielderEnemy;
+            if (shielder != null) shielder.TakeDamageDirectional(dmg, transform.position, h.knockbackForce);
+            else e.TakeDamage(dmg, transform.position, h.knockbackForce);
+
+            DamageNumber.Spawn(e.transform.position + Vector3.up * 2.3f, dmg, Color.white);
+            VFXManager.Spawn(EffectType.HitSparks, e.transform.position + Vector3.up * 1f, Color.white);
+            hitAny = true;
+        }
+
+        if (hitAny)
+        {
+            CombatFeel.HitStop(h.hitstopFrames);
+            AudioManager.Play("hit_enemy");
+        }
     }
 
     // Fan-shaped range indicator: thin white arc for light attacks, thick orange for heavy.
