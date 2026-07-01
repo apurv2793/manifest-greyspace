@@ -169,10 +169,14 @@ public class GunCharacter : MonoBehaviour
         }
     }
 
+    // Optional (Phase 8) — set by GreyspaceScene per mission to clamp the camera to a zone. Null = no clamp.
+    public ZoneBounds currentZone;
+
     void LateUpdate()
     {
         if (isDead || Camera.main == null) return;
         Vector3 target = transform.position + new Vector3(0, 14, -12);
+        if (currentZone != null) target = currentZone.ClampToZone(target);
         Camera.main.transform.position = Vector3.Lerp(
             Camera.main.transform.position, target, 8f * Time.deltaTime);
     }

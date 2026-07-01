@@ -178,29 +178,36 @@ _Staff → replaced by Shield per plan. Staff ComboData kept as hidden archetype
 
 ---
 
-## Phase 8 — Content Pipeline & Modularity
+## Phase 8 — Content Pipeline & Modularity ✅ done
 
-### 8A · Enemy creation pipeline
-- New enemy = new ScriptableObject (stats) + optional new class (if unique AI)
-- `EnemyBase` handles everything else
+### 8A · Enemy creation pipeline — already satisfied, no new code needed
+- Every stat (health, speed, attackDamage, xpValue) is a public field on the prefab —
+  a designer tunes a new enemy variant entirely in the Inspector, no code change required
+- `EnemyBase` handles HP bar, hit flash, knockback, death VFX, XP fire automatically
 
-### 8B · Skill/boon creation
-- New skill = new `SkillNode` ScriptableObject → appears in skill tree automatically
+### 8B · Skill/boon creation — already satisfied, no new code needed
+- New skill = new `SkillNode` asset (`Create > Game > SkillNode`) → appears in skill tree automatically
 
-### 8C · Mission authoring
-- `MissionDefinition` ScriptableObject already exists
-- Extend with: SpawnGroup array per wave, checkpoint positions, zone bounds
-- Hub portal auto-reads MissionDefinition — no code changes to add a mission
+### 8C · Mission authoring — already satisfied, no new code needed
+- `MissionDefinition` + `SpawnGroup` (Phase 5) already give data-driven wave composition
+- Hub portal auto-reads `MissionDefinition` — no code changes to add a mission
+- Zone bounds now available (8E below) for missions that want them
 
-### 8D · Weapon creation
-- Implement `PrimaryAttack()` + `SpecialAttack()` → one file
-- Assign `WeaponDefinition` ScriptableObject (name, stats, pickup sprite colour)
-- Appears in pickup system automatically
+### 8D · Weapon creation — already satisfied, no new code needed
+- `ComboData` is already `[CreateAssetMenu]` — new weapons are authored as assets
+  (`Create > Combat > ComboData`), no code required. `WeaponBase` (parked, Phase 3) was the
+  originally-planned path but ComboData already does this job end to end.
 
-### 8E · Zone system (within missions)
-- `ZoneBounds.cs` — trigger volumes, camera clamps to bounds when player inside
-- `EnemyTerritory.cs` — enemies stop chasing when player leaves their zone
-- Missions become multi-zone sequences rather than single arenas
+### 8E · Zone system ✅ new
+- `ZoneBounds.cs` (GLM 5.1) — rectangular XZ zone, `Contains()`/`ClampToZone()`, Scene-view gizmo
+- Wired into `EnemyBase` — enemies with a `zone` assigned go idle once the player leaves it
+  (opt-in, null by default — missions without zones behave exactly as before)
+- Wired into `GunCharacter.LateUpdate()` — camera clamps to `currentZone` if one is assigned
+- Missions can now be multi-zone, but nothing requires it — purely additive
+
+### NPC stub ✅ new (from Enhancements table, pulled into this phase)
+- `NPCStub.cs` (GLM 5.1) — capsule+sphere placeholder, `IsPlayerNearby`, fires a
+  `UnityEvent onInteract` on E — no dialogue system yet, just the interaction hook
 
 ---
 

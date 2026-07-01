@@ -12,6 +12,9 @@ public abstract class EnemyBase : MonoBehaviour
     public float attackCooldown;
     public int   xpValue = 10;
 
+    // Optional territory gate (Phase 8) — leave null for enemies with no zone restriction.
+    public ZoneBounds zone;
+
     protected bool  isDead;
     protected float nextAttack;
 
@@ -33,6 +36,7 @@ public abstract class EnemyBase : MonoBehaviour
     void Update()
     {
         if (isDead || player == null) return;
+        if (zone != null && !zone.Contains(player.position)) { UpdateHPBar(); return; }
         UpdateBehaviour();
         UpdateHPBar();
     }

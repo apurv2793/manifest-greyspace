@@ -113,3 +113,5 @@ Track which features have gone through the coordination loop:
 | VFXManager.cs | ✅ applied, wired into melee/death/dash/levelup | Groq 70B (NIM timed out) | 0.7 → fixed real bug (ring-expand offset missing Time.deltaTime, would've been explosive) |
 | AudioManager.cs | ✅ applied (hand-written stub, no coordination call needed) | — | — |
 | CameraShake.cs | ✅ applied, wired into player-hit/death | GLM 5.1 (NIM) | 0.9 vs Groq 0.1 (rejected — does not compile, StartCoroutine on bare GameObject) |
+| ZoneBounds.cs | ✅ applied, wired into EnemyBase + GunCharacter camera | GLM 5.1 (NIM) | 0.9 vs Groq 0.75 (fences) |
+| NPCStub.cs | ✅ applied | GLM 5.1 (NIM) | 0.82 vs Groq 0.65 (fences, stale IsPlayerNearby on null player) → .sharedMaterial fixed to .material |
