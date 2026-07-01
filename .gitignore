@@ -18,3 +18,11 @@ Thumbs.db
 *.csproj
 *.sln
 *.user
+
+# nested duplicate Unity project dirs (own repos / scratch)
+ManifestGreyspace/
+My project/
+Sample/
+
+# graphify working files
+graphify-out/

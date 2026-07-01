@@ -4,8 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
-  m_ObjectNames: []
-  m_RootDataPath: 
-  m_ConfigPath: 
-  m_ActiveBuildTarget: 0
+  m_Scenes:
+  - enabled: 1
+    path: Assets/HubA.unity
+    guid: fc1d2fbb32ca84ec99a7cd22c94bbebd
+  m_configObjects: {}
