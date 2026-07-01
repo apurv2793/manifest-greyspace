@@ -37,6 +37,9 @@ public class GunCharacter : MonoBehaviour
     [HideInInspector] public UnityEngine.UI.Text weaponLabel;
     Vector3 dashDir;
 
+    // Phase 4: skill tree + loadout. No UI yet — unlock/assign via Inspector or console for now.
+    public PlayerInventory inventory = new PlayerInventory();
+
     // -------------------------------------------------------------------------
     void Start()
     {

@@ -102,7 +102,10 @@ Track which features have gone through the coordination loop:
 | RangedEnemy.cs | ✅ applied | GLM 5.1 (NIM) | 0.72 → fixed |
 | ShielderEnemy.cs | ✅ applied | GLM 5.1 (NIM) | 0.88 vs Groq 0.2 (rejected — broken Invoke/GetComponentsInChildren) |
 | SpawnGroup.cs | ✅ applied, wired into WaveLoop | GLM 5.1 (NIM) | 0.85 vs Groq 0.4 (rejected — missing using UnityEngine) |
-| SkillNode.cs | pending | — | — |
+| SkillNode.cs | ✅ applied | GLM 5.1 (NIM) | 0.8 vs Groq 0.25 (rejected — invalid attribute syntax, missing using) → nested EffectType enum on apply |
+| SkillTree.cs | ✅ applied | GLM 5.1 (NIM) | 0.9 vs Groq 0.5 (rejected — missing using System for Math.Max) |
+| PlayerInventory.cs | ✅ applied, wired as GunCharacter.inventory | GLM 5.1 (NIM) | 0.85 vs Groq 0.7 (markdown fences again) |
+| PenaltyManager.cs | ✅ applied (hand-written stub, no coordination call needed) | — | — |
 | SaveManager.cs | pending | — | — |
 | VFXManager.cs | pending | — | — |
 | AudioManager.cs | pending | — | — |
