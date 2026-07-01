@@ -167,6 +167,7 @@ public class GreyspaceScene : MonoBehaviour
         totalWaves = def.waves;
         wave = 0; playerDead = false; missionComplete = false;
         portals.Clear();
+        Checkpoint.ResetForNewMission();
 
         ClearWorld();
 
@@ -459,6 +460,18 @@ public class GreyspaceScene : MonoBehaviour
 
         GunCharacter pc = playerGO?.GetComponent<GunCharacter>();
         if (pc != null) { pc.healthFill = healthFill; pc.weaponLabel = wlText; }
+
+        // Controls reference (top-right) — sourced from ControlsMap, kept up to date as bindings are added
+        GameObject ctrlGO = Rect(hudRoot.transform, "ControlsText");
+        Text ctrlText = ctrlGO.AddComponent<Text>();
+        ctrlText.font = font; ctrlText.fontSize = 13;
+        ctrlText.color = new Color(1f, 1f, 1f, 0.55f);
+        ctrlText.alignment = TextAnchor.UpperRight;
+        ctrlText.text = string.Join("\n", ControlsMap.Bindings);
+        RectTransform ctrlrt = ctrlGO.GetComponent<RectTransform>();
+        ctrlrt.anchorMin = ctrlrt.anchorMax = ctrlrt.pivot = new Vector2(1, 1);
+        ctrlrt.anchoredPosition = new Vector2(-16, -16);
+        ctrlrt.sizeDelta = new Vector2(260, 20 * ControlsMap.Bindings.Length);
     }
 
     IEnumerator ShowRewardToast()

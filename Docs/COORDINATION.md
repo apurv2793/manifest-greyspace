@@ -106,7 +106,10 @@ Track which features have gone through the coordination loop:
 | SkillTree.cs | ✅ applied | GLM 5.1 (NIM) | 0.9 vs Groq 0.5 (rejected — missing using System for Math.Max) |
 | PlayerInventory.cs | ✅ applied, wired as GunCharacter.inventory | GLM 5.1 (NIM) | 0.85 vs Groq 0.7 (markdown fences again) |
 | PenaltyManager.cs | ✅ applied (hand-written stub, no coordination call needed) | — | — |
-| SaveManager.cs | pending | — | — |
+| WorldState.cs | ✅ applied | GLM 5.1 (NIM) | 0.92 vs Groq 0.55 (fences again) |
+| StoryFlags.cs GetAll/LoadFrom | ✅ applied (hand-written, mechanical addition) | — | — |
+| SaveManager.cs | ✅ applied | Groq 70B (NIM timed out twice) | 0.55 → fixed (missing [Serializable], missing usings) |
+| Checkpoint.cs | ✅ applied, wired reset into EnterMission | GLM 5.1 (NIM) | 0.9 vs Groq 0.5 (fences, no collider cleanup) |
 | VFXManager.cs | pending | — | — |
 | AudioManager.cs | pending | — | — |
 | CameraShake.cs | pending | — | — |

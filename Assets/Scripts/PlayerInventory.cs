@@ -1,4 +1,7 @@
 // GLM 5.1 via Manifest OS (call_id 179) — corrected: dropped unused using System;
+// [System.Serializable] so activeSlots shows in the Inspector under GunCharacter -> Inventory.
+// skillTree.unlocked stays runtime-only (Unity can't serialize HashSet) -- unlock via TryUnlock() in code/console.
+[System.Serializable]
 public class PlayerInventory
 {
     public SkillTree skillTree = new SkillTree();

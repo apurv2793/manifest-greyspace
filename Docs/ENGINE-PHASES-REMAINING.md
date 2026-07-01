@@ -37,7 +37,7 @@ _Staff → replaced by Shield per plan. Staff ComboData kept as hidden archetype
 
 ---
 
-## Phase 4 — Progression System _(XP/leveling done ✅)_
+## Phase 4 — Progression System ✅ done
 
 ### 4A · Skill tree
 - `SkillNode.cs` ScriptableObject: name, description, XP cost, effect type + value, prerequisites
@@ -52,12 +52,23 @@ _Staff → replaced by Shield per plan. Staff ComboData kept as hidden archetype
 ### 4C · Penalty system stub
 - `PenaltyManager.cs` — empty subscriber on `GameEvents.OnPlayerDeath`
 - No behaviour — placeholder for story-driven design later
+- Never instantiated yet (`new PenaltyManager()` not called anywhere) — inert on purpose
 
 ### 4D · PlayerInventory
 - `PlayerInventory.cs` — weapon slots (2), active skills (4 mapped to 1/2/3/4), passive boons
 - Manages equip/unequip, validates prerequisites
+- Wired as `GunCharacter.inventory` field
 
 **Milestone:** Kill enemies → XP fills bar → level up → skill point awarded → node unlocked via Inspector.
+
+### How to see this in Unity (until Phase 7 builds real UI)
+- **SkillNode** — real ScriptableObject: Project window → right-click → `Create > Game > SkillNode`,
+  fill fields in Inspector like any other asset (same pattern as `MissionDefinition`/`SpawnGroup`).
+- **PlayerInventory** — `[System.Serializable]`, so `GunCharacter` → `Inventory` → `Active Slots` (4)
+  shows in Inspector at runtime; drag a SkillNode asset in to test a slot.
+- **SkillTree.unlocked** — a `HashSet<SkillNode>`, Unity can't serialize it, stays invisible in
+  Inspector regardless. Unlock for testing via code/console: `player.inventory.skillTree.TryUnlock(node)`.
+- **PenaltyManager** — nothing to see until something calls `new PenaltyManager()`.
 
 ---
 
@@ -114,7 +125,10 @@ _Staff → replaced by Shield per plan. Staff ComboData kept as hidden archetype
 ### 6D · Checkpoint
 - `Checkpoint.cs` — proximity trigger, activates on approach
 - Saves current position + scene snapshot
-- Death → respawn at last checkpoint (or hub if no checkpoint activated)
+- Death → respawn at last checkpoint (or hub if no checkpoint activated) — **deferred**:
+  `R` still does a full mission restart from wave 1. Checkpoint.cs itself works (save/load,
+  position tracking), but death doesn't yet route through it. Revisit when wave-preserving
+  respawn is actually needed.
 
 **Milestone:** Progress after two missions. Quit. Reopen. Exact state restored.
 
