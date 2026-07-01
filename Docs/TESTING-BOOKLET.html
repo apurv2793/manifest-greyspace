@@ -7,55 +7,76 @@
   :root { color-scheme: light dark; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    max-width: 820px; margin: 0 auto; padding: 2rem 1.5rem 6rem;
+    max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 6rem;
     background: #f6f5f2; color: #1a1a1a; line-height: 1.5;
   }
   @media (prefers-color-scheme: dark) {
     body { background: #17181a; color: #e8e6e1; }
     .card { background: #232427 !important; border-color: #33343a !important; }
     .item { border-color: #33343a !important; }
-    .item.done { background: #1c2b1f !important; }
+    .item.pass { background: #1c2b1f !important; }
+    .item.fail { background: #2b1c1c !important; }
     .badge { background: #2a2b2e !important; color: #b9b7b0 !important; }
+    textarea, .notes-input { background: #1c1d20 !important; color: #e8e6e1 !important; border-color: #3a3b3f !important; }
   }
   h1 { font-size: 22px; font-weight: 600; margin-bottom: 0.25rem; }
-  .sub { color: #767469; font-size: 14px; margin-bottom: 1.5rem; }
-  .progress-bar { position: sticky; top: 0; background: inherit; padding: 0.75rem 0; z-index: 10; }
-  .progress-track { height: 8px; border-radius: 4px; background: #e2e0da; overflow: hidden; }
+  .sub { color: #767469; font-size: 14px; margin-bottom: 1.2rem; }
+  .top-bar { position: sticky; top: 0; background: inherit; padding: 0.75rem 0; z-index: 10; }
+  .progress-track { height: 8px; border-radius: 4px; background: #e2e0da; overflow: hidden; display: flex; }
   @media (prefers-color-scheme: dark) { .progress-track { background: #2a2b2e; } }
-  .progress-fill { height: 100%; background: #3c8f5c; transition: width 0.2s; width: 0%; }
-  .progress-label { font-size: 13px; color: #767469; margin-top: 6px; }
+  .progress-pass { height: 100%; background: #3c8f5c; transition: width 0.2s; }
+  .progress-fail { height: 100%; background: #c14f4f; transition: width 0.2s; }
+  .progress-label { font-size: 13px; color: #767469; margin-top: 6px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
   .card {
     background: #fff; border: 1px solid #e2e0da; border-radius: 10px;
     padding: 1.1rem 1.3rem; margin-bottom: 1.1rem;
   }
   .card h2 { font-size: 16px; font-weight: 600; margin: 0 0 0.9rem; display: flex; align-items: center; gap: 8px; }
   .badge { background: #eeece6; color: #58564d; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
-  .item {
-    display: flex; align-items: flex-start; gap: 10px; padding: 8px 0;
-    border-bottom: 1px solid #f0efe9; cursor: pointer;
-  }
+  .item { padding: 10px 0; border-bottom: 1px solid #f0efe9; }
   @media (prefers-color-scheme: dark) { .item { border-color: #2a2b2e; } }
   .item:last-child { border-bottom: none; }
-  .item.done { background: #f1f7f2; margin: 0 -8px; padding: 8px; border-radius: 6px; }
-  .item.done .label { text-decoration: line-through; opacity: 0.6; }
-  .item input { margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; }
-  .label { font-size: 14px; flex: 1; }
+  .item.pass, .item.fail { margin: 0 -8px; padding: 10px 8px; border-radius: 6px; }
+  .item.fail { background: #fbeeee; }
+  .item-top { display: flex; align-items: flex-start; gap: 10px; }
+  .label { font-size: 14px; flex: 1; font-weight: 500; }
   .steps { font-size: 12px; color: #8a8878; margin-top: 3px; }
   @media (prefers-color-scheme: dark) { .steps { color: #8f8d84; } }
+  .status-btns { display: flex; gap: 4px; flex-shrink: 0; }
+  .status-btn {
+    font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid #d8d6cf;
+    background: transparent; cursor: pointer; color: inherit; font-weight: 500;
+  }
+  @media (prefers-color-scheme: dark) { .status-btn { border-color: #3a3b3f; } }
+  .status-btn.active-pass { background: #3c8f5c; color: white; border-color: #3c8f5c; }
+  .status-btn.active-fail { background: #c14f4f; color: white; border-color: #c14f4f; }
+  .notes-input {
+    width: 100%; box-sizing: border-box; font-size: 13px; margin-top: 8px;
+    padding: 6px 8px; border-radius: 6px; border: 1px solid #d8d6cf; font-family: inherit;
+  }
   .footer { text-align: center; font-size: 12px; color: #9a9890; margin-top: 2rem; }
-  button.reset {
+  button.action {
     font-size: 12px; padding: 5px 12px; border-radius: 6px; border: 1px solid #d8d6cf;
     background: transparent; cursor: pointer; color: inherit;
   }
+  @media (prefers-color-scheme: dark) { button.action { border-color: #3a3b3f; } }
+  button.action:hover { background: rgba(0,0,0,0.04); }
 </style>
 </head>
 <body>
 
-<div class="progress-bar">
+<div class="top-bar">
   <h1>Greyspace — Testing Booklet</h1>
-  <div class="sub">Phases 1–7 · check off each item as you verify it in Unity Play mode. Progress saves in this browser.</div>
-  <div class="progress-track"><div class="progress-fill" id="fill"></div></div>
-  <div class="progress-label"><span id="count">0 / 0</span> verified &nbsp;·&nbsp; <button class="reset" onclick="resetAll()">Reset all</button></div>
+  <div class="sub">Phases 1–8 (full plan) · mark pass/fail, add notes on fail. Progress saves in this browser.</div>
+  <div class="progress-track">
+    <div class="progress-pass" id="fillPass" style="width:0%"></div>
+    <div class="progress-fail" id="fillFail" style="width:0%"></div>
+  </div>
+  <div class="progress-label">
+    <span id="count">0 pass · 0 fail · 0 untested</span>
+    <button class="action" onclick="copyReport()">Copy report</button>
+    <button class="action" onclick="resetAll()">Reset all</button>
+  </div>
 </div>
 
 <div id="sections"></div>
@@ -96,8 +117,8 @@ const DATA = [
     ["p5-charger", "Charger telegraphs then sprints", "Watch for a pause/wind-up before it charges in a straight line"],
     ["p5-ranged", "Ranged enemy keeps distance, fires projectiles", "Should retreat if you get close, fire slow projectiles from range"],
     ["p5-shielder", "Shielder blocks frontal hits, breaks after 3", "Attack from the front — reduced damage first 3 hits, shield visual breaks after"],
-    ["p5-meleeallenemies", "★ Melee damages ALL enemy types, not just Stalker", "Bug fix verify — hit a Charger/Ranged/Shielder with J/K, confirm damage registers (was broken before this session)"],
-    ["p5-xpallenemies", "★ Killing a Stalker grants XP", "Bug fix verify — kill a default Stalker enemy, confirm XP bar moves (was silently broken — zero XP — before this session)"],
+    ["p5-meleeallenemies", "★ Melee damages ALL enemy types, not just Stalker", "Bug fix verify — hit a Charger/Ranged/Shielder with J/K, confirm damage registers"],
+    ["p5-xpallenemies", "★ Killing a Stalker grants XP", "Bug fix verify — kill a default Stalker enemy, confirm XP bar moves"],
     ["p5-spawngroup", "Mission waves can use SpawnGroup composition", "If a mission has waveSpawns assigned, correct enemy mix should spawn per wave"],
   ]},
   { phase: "Phase 6 — Save/checkpoint", items: [
@@ -105,10 +126,11 @@ const DATA = [
     ["p6-checkpointactivate", "Walking near checkpoint turns sphere gold", "Approach within activateRadius (2.5 default), sphere should flash to gold/yellow"],
     ["p6-saveload", "Quit and reopen restores progress", "Progress two missions in, quit Play mode (or app), reopen, call SaveManager.Load — HP/XP/level should match"],
     ["p6-worldstate", "WorldState flags persist across save/load", "Set a WorldState flag, save, load, confirm WorldState.Has still returns true"],
+    ["p6-fullrestart", "Death still does a full mission restart (expected)", "Not a bug — checkpoint-preserving respawn is deliberately deferred, R restarts wave 1"],
   ]},
   { phase: "Phase 7 — Polish (VFX/audio/camera)", items: [
     ["p7-hitsparks", "Cube sparks fly out on melee hit", "Small white cubes should burst outward and shrink on every successful hit"],
-    ["p7-deathburst", "Spheres burst outward on enemy death", "Red-ish spheres expand and fade when any enemy dies"],
+    ["p7-deathburst", "Spheres burst outward on enemy death", "Red-ish spheres expand and fade when any enemy dies (including Stalker)"],
     ["p7-dashafter", "Ghost afterimage appears on dash", "Semi-transparent blue capsule should flash at dash start position"],
     ["p7-levelupburst", "Gold ring bursts upward on level-up", "10 gold spheres should rise and expand in a ring around the player on level-up"],
     ["p7-camshake-hit", "Light camera shake when player takes damage", "Subtle shake, should not feel jarring"],
@@ -116,51 +138,112 @@ const DATA = [
     ["p7-hpbar-lerp", "HP bar smoothly drains instead of snapping", "Take damage, bar should visibly chase down over a few frames, not instant-cut"],
     ["p7-audionoop", "No errors from AudioManager calls", "Check Console — Play(clipName) calls should be silent no-ops, zero errors/warnings"],
     ["p7-controlshud", "Controls panel visible top-right of HUD", "Should list WASD/Mouse/J/K/Shift/Tab/E/R bindings, semi-transparent white text"],
+    ["p7-redplayerdmg", "Damage numbers show red when player is hit", "New this pass — was always white regardless of source before"],
+  ]},
+  { phase: "Phase 8 — Zone system + NPC", items: [
+    ["p8-zonegizmo", "ZoneBounds shows a yellow wire cube in Scene view", "If a ZoneBounds component exists in the scene, select it and check the Scene view (not Game view)"],
+    ["p8-enemyidle", "Enemy with a zone assigned goes idle outside it", "Assign a ZoneBounds to an enemy's zone field, walk player outside — enemy should stop chasing"],
+    ["p8-cameraclamp", "Camera clamps if GunCharacter.currentZone is assigned", "Assign a ZoneBounds to currentZone, walk toward the edge — camera should stop at the zone boundary"],
+    ["p8-npcinteract", "NPCStub fires onInteract on E within range", "Place an NPCStub in the hub, wire a UnityEvent (e.g. Debug.Log), walk close, press E"],
+    ["p8-nocode-enemy", "New enemy stats need zero code changes", "Change health/speed on an enemy prefab in Inspector, confirm it takes effect without touching a script"],
+    ["p8-nocode-weapon", "New weapon needs zero code changes", "Create > Combat > ComboData, fill in steps, confirm it's usable as a pickup/equip without new code"],
   ]},
 ];
 
-const KEY = "greyspace-testing-booklet-v1";
+const KEY = "greyspace-testing-booklet-v2";
 let state = JSON.parse(localStorage.getItem(KEY) || "{}");
+
+function getItemState(id) {
+  return state[id] || { status: "untested", notes: "" };
+}
+
+function setItemState(id, patch) {
+  state[id] = Object.assign(getItemState(id), patch);
+  localStorage.setItem(KEY, JSON.stringify(state));
+}
 
 function render() {
   const root = document.getElementById("sections");
   root.innerHTML = "";
-  let total = 0, done = 0;
+  let total = 0, pass = 0, fail = 0;
 
   DATA.forEach(section => {
     const card = document.createElement("div");
     card.className = "card";
-    const sectionDone = section.items.filter(([id]) => state[id]).length;
+    let sectionPass = 0, sectionFail = 0;
+    section.items.forEach(([id]) => {
+      const s = getItemState(id).status;
+      if (s === "pass") sectionPass++;
+      if (s === "fail") sectionFail++;
+    });
     total += section.items.length;
-    done += sectionDone;
+    pass += sectionPass;
+    fail += sectionFail;
 
-    card.innerHTML = `<h2>${section.phase} <span class="badge">${sectionDone}/${section.items.length}</span></h2>`;
+    card.innerHTML = `<h2>${section.phase} <span class="badge">${sectionPass} pass · ${sectionFail} fail · ${section.items.length - sectionPass - sectionFail} left</span></h2>`;
     section.items.forEach(([id, label, steps]) => {
-      const checked = !!state[id];
+      const itemState = getItemState(id);
       const item = document.createElement("div");
-      item.className = "item" + (checked ? " done" : "");
+      item.className = "item" + (itemState.status !== "untested" ? " " + itemState.status : "");
       item.innerHTML = `
-        <input type="checkbox" id="${id}" ${checked ? "checked" : ""}>
-        <div>
-          <div class="label">${label}</div>
-          <div class="steps">${steps}</div>
-        </div>`;
-      item.querySelector("input").addEventListener("change", (e) => {
-        state[id] = e.target.checked;
-        localStorage.setItem(KEY, JSON.stringify(state));
-        render();
+        <div class="item-top">
+          <div style="flex:1">
+            <div class="label">${label}</div>
+            <div class="steps">${steps}</div>
+          </div>
+          <div class="status-btns">
+            <button class="status-btn ${itemState.status === "pass" ? "active-pass" : ""}" data-act="pass">Pass</button>
+            <button class="status-btn ${itemState.status === "fail" ? "active-fail" : ""}" data-act="fail">Fail</button>
+          </div>
+        </div>
+        ${itemState.status === "fail" ? `<input class="notes-input" placeholder="What went wrong?" value="${(itemState.notes || "").replace(/"/g, "&quot;")}">` : ""}
+      `;
+      item.querySelectorAll(".status-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const act = btn.dataset.act;
+          const cur = getItemState(id).status;
+          setItemState(id, { status: cur === act ? "untested" : act });
+          render();
+        });
       });
+      const notesInput = item.querySelector(".notes-input");
+      if (notesInput) {
+        notesInput.addEventListener("input", (e) => setItemState(id, { notes: e.target.value }));
+      }
       card.appendChild(item);
     });
     root.appendChild(card);
   });
 
-  document.getElementById("fill").style.width = total ? (done / total * 100) + "%" : "0%";
-  document.getElementById("count").textContent = done + " / " + total;
+  document.getElementById("fillPass").style.width = total ? (pass / total * 100) + "%" : "0%";
+  document.getElementById("fillFail").style.width = total ? (fail / total * 100) + "%" : "0%";
+  document.getElementById("count").textContent = `${pass} pass · ${fail} fail · ${total - pass - fail} untested`;
+}
+
+function copyReport() {
+  let lines = ["Greyspace testing report", ""];
+  let pass = 0, fail = 0, untested = 0;
+  DATA.forEach(section => {
+    const failedItems = section.items.filter(([id]) => getItemState(id).status === "fail");
+    const passedCount = section.items.filter(([id]) => getItemState(id).status === "pass").length;
+    const untestedCount = section.items.filter(([id]) => getItemState(id).status === "untested").length;
+    pass += passedCount; untested += untestedCount; fail += failedItems.length;
+    lines.push(`## ${section.phase} — ${passedCount} pass, ${failedItems.length} fail, ${untestedCount} untested`);
+    failedItems.forEach(([id, label]) => {
+      const notes = getItemState(id).notes;
+      lines.push(`- FAIL: ${label}${notes ? " — " + notes : " (no notes)"}`);
+    });
+    lines.push("");
+  });
+  lines.splice(1, 0, `Total: ${pass} pass, ${fail} fail, ${untested} untested`, "");
+  const text = lines.join("\n");
+  navigator.clipboard.writeText(text).then(() => alert("Report copied — paste it back into the session.")).catch(() => {
+    prompt("Copy failed, select and copy manually:", text);
+  });
 }
 
 function resetAll() {
-  if (!confirm("Clear all checked items?")) return;
+  if (!confirm("Clear all pass/fail marks and notes?")) return;
   state = {};
   localStorage.setItem(KEY, JSON.stringify(state));
   render();
