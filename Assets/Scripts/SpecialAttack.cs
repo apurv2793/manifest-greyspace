@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 // Phase 3 — per-weapon special attack, bound to F. Reads the equipped ComboData's
 // specialAttack HitConfig and branches on weapon name. Same hit-detection pattern as
@@ -122,6 +123,7 @@ public class SpecialAttack : MonoBehaviour
         float rangeLimit = 25f;
         float distTraveled = 0f;
         int hitsTaken = 0;
+        HashSet<GameObject> hitEnemies = new HashSet<GameObject>();
 
         while (distTraveled < rangeLimit && hitsTaken < 2)
         {
@@ -130,8 +132,9 @@ public class SpecialAttack : MonoBehaviour
 
             foreach (GunEnemy e in FindObjectsOfType<GunEnemy>())
             {
-                if (Vector3.Distance(e.transform.position, p.transform.position) <= 1f)
+                if (!hitEnemies.Contains(e.gameObject) && Vector3.Distance(e.transform.position, p.transform.position) <= 1f)
                 {
+                    hitEnemies.Add(e.gameObject);
                     e.TakeDamage(dmg, transform.position, h.knockbackForce);
                     DamageNumber.Spawn(e.transform.position + Vector3.up * 2.3f, dmg, Color.white);
                     VFXManager.Spawn(EffectType.HitSparks, e.transform.position + Vector3.up * 1f, Color.white);
@@ -140,8 +143,9 @@ public class SpecialAttack : MonoBehaviour
             }
             foreach (EnemyBase e in FindObjectsOfType<EnemyBase>())
             {
-                if (Vector3.Distance(e.transform.position, p.transform.position) <= 1f)
+                if (!hitEnemies.Contains(e.gameObject) && Vector3.Distance(e.transform.position, p.transform.position) <= 1f)
                 {
+                    hitEnemies.Add(e.gameObject);
                     e.TakeDamage(dmg, transform.position, h.knockbackForce);
                     DamageNumber.Spawn(e.transform.position + Vector3.up * 2.3f, dmg, Color.white);
                     VFXManager.Spawn(EffectType.HitSparks, e.transform.position + Vector3.up * 1f, Color.white);
