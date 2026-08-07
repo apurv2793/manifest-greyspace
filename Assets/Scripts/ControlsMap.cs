@@ -12,5 +12,6 @@ public static class ControlsMap
         "Tab — Switch weapon",
         "E — Interact (pickup / portal)",
         "R — Retry / Replay",
+        "F — Special attack",
     };
 }

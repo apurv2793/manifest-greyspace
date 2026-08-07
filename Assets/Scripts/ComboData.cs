@@ -31,11 +31,23 @@ public struct ComboStep
     public HitConfig heavy;   // K
 }
 
+// Phase 3 — per-weapon special attack (F) and dash modifier.
+[System.Serializable]
+public struct DashModifier
+{
+    public float distanceMult;
+    public float durationMult;
+    public bool  afterimage;
+    public bool  blockWindow;
+}
+
 [CreateAssetMenu(menuName = "Combat/ComboData")]
 public class ComboData : ScriptableObject
 {
     public int        baseDamage = 15;
     public ComboStep[] steps;
+    public HitConfig   specialAttack;
+    public DashModifier dashMod;
 
     // ── Presets ──────────────────────────────────────────────────────────────
 
@@ -66,6 +78,8 @@ public class ComboData : ScriptableObject
                 heavy = Melee(2.5f, 2.2f, 90f,  28f, 8, 0.12f, 0.14f, 0f),
             },
         };
+        c.specialAttack = Melee(2.8f, 3.5f, 360f, 20f, 8, 0.5f, 0.4f, 0f);        // 360° spin AOE
+        c.dashMod = new DashModifier { distanceMult = 0.8f, durationMult = 0.9f, afterimage = true, blockWindow = false };
         return c;
     }
 
@@ -89,10 +103,13 @@ public class ComboData : ScriptableObject
                 heavy = Proj(3.0f, 15f, new Color(1f, 0.25f, 0.0f), 2f, 7, 0.22f, 0.14f, 0f),
             },
         };
+        c.specialAttack = Proj(1.2f, 20f, new Color(0.9f, 0.3f, 0.3f), 4f, 5, 0.4f, 0f, 0f);   // arc volley
+        c.dashMod = new DashModifier { distanceMult = 1.4f, durationMult = 1.1f, afterimage = false, blockWindow = false };
         return c;
     }
 
     // Staff — mixed: light = melee poke, heavy = magic bolt; 2 steps
+    // Kept as a hidden archetype (Phase 3 replaced it with Shield as a selectable weapon).
     public static ComboData Staff()
     {
         var c = CreateInstance<ComboData>();
@@ -111,6 +128,30 @@ public class ComboData : ScriptableObject
                 heavy = Proj(2.8f, 13f, new Color(0.9f, 0.9f, 1.0f), 2f, 8, 0.18f, 0.14f, 0f),
             },
         };
+        return c;
+    }
+
+    // Shield — light/heavy bash, 2 steps; special = shield throw (bounces up to 2 enemies)
+    public static ComboData Shield()
+    {
+        var c = CreateInstance<ComboData>();
+        c.name = "Shield";
+        c.baseDamage = 10;
+        c.steps = new[]
+        {
+            new ComboStep
+            {
+                light = Melee(0.9f, 2f, 70f, 12f, 4, 0.25f, 0.3f, 0.2f),
+                heavy = Melee(0.9f, 2f, 70f, 12f, 4, 0.25f, 0.3f, 0.2f),
+            },
+            new ComboStep
+            {
+                light = Melee(0.9f, 2f, 70f, 12f, 4, 0.25f, 0.3f, 0.2f),
+                heavy = Melee(0.9f, 2f, 70f, 12f, 4, 0.25f, 0.3f, 0.2f),
+            },
+        };
+        c.specialAttack = Proj(1.3f, 25f, Color.cyan, 14f, 3, 0.3f, 0f, 0f);
+        c.dashMod = new DashModifier { distanceMult = 1.0f, durationMult = 0.9f, afterimage = false, blockWindow = true };
         return c;
     }
 

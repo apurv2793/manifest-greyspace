@@ -52,6 +52,7 @@ public class GunCharacter : MonoBehaviour
         _weaponIndex = 0;
         _melee = gameObject.AddComponent<MeleeAttack>();
         _melee.comboData = comboData != null ? comboData : _weapons[0];
+        var _special = gameObject.AddComponent<SpecialAttack>();
         UpdateWeaponLabel();
     }
 
@@ -344,4 +345,7 @@ public class GunCharacter : MonoBehaviour
         CameraShake.Shake(0.3f, 0.4f);
         if (scene != null) scene.OnPlayerDied();
     }
+
+    // Phase 3 — exposes the equipped weapon for SpecialAttack.cs (fields above are private).
+    public ComboData CurrentWeapon => _weapons[_weaponIndex];
 }
