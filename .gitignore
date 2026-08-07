@@ -26,3 +26,4 @@ Sample/
 
 # graphify working files
 graphify-out/
+.env
