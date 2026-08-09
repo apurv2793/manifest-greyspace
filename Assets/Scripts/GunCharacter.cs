@@ -48,7 +48,7 @@ public class GunCharacter : MonoBehaviour
         else Debug.Log("GunCharacter: Using custom visual root — " + customVisualRoot.name);
 
         // Player starts with only Sword; second slot is empty (max 2 weapons)
-        _weapons = new System.Collections.Generic.List<ComboData> { ComboData.Sword() };
+        _weapons = new System.Collections.Generic.List<ComboData> { ContentLibrary.Combo("Sword") };
         _weaponIndex = 0;
         _melee = gameObject.AddComponent<MeleeAttack>();
         _melee.comboData = comboData != null ? comboData : _weapons[0];

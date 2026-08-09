@@ -133,20 +133,31 @@ public class GreyspaceScene : MonoBehaviour
 
     void SpawnPortals()
     {
-        var m1 = ScriptableObject.CreateInstance<MissionDefinition>();
-        m1.missionId   = "proving_ground";
-        m1.displayName = "The Proving Ground";
-        m1.waves       = 3;
-        m1.rewardXP    = 75;
-        m1.description = "Survive three waves of enemies.";
+        // Content-pack lookup first (Assets/Content/Missions/*.asset via
+        // Resources/ContentPacks/Base.asset); inline construction is the fallback
+        // if the pack or an entry is missing, same peek-style tolerance as combos.
+        var m1 = ContentLibrary.Mission("proving_ground");
+        if (m1 == null)
+        {
+            m1 = ScriptableObject.CreateInstance<MissionDefinition>();
+            m1.missionId   = "proving_ground";
+            m1.displayName = "The Proving Ground";
+            m1.waves       = 3;
+            m1.rewardXP    = 75;
+            m1.description = "Survive three waves of enemies.";
+        }
 
-        var m2 = ScriptableObject.CreateInstance<MissionDefinition>();
-        m2.missionId    = "inner_sanctum";
-        m2.displayName  = "The Inner Sanctum";
-        m2.waves        = 5;
-        m2.rewardXP     = 150;
-        m2.requiredFlag  = "proving_ground_complete";
-        m2.lockedReason  = "Clear The Proving Ground first";
+        var m2 = ContentLibrary.Mission("inner_sanctum");
+        if (m2 == null)
+        {
+            m2 = ScriptableObject.CreateInstance<MissionDefinition>();
+            m2.missionId    = "inner_sanctum";
+            m2.displayName  = "The Inner Sanctum";
+            m2.waves        = 5;
+            m2.rewardXP     = 150;
+            m2.requiredFlag  = "proving_ground_complete";
+            m2.lockedReason  = "Clear The Proving Ground first";
+        }
 
         AddPortal(new Vector3(0, 0, 12),  Quaternion.Euler(0, 180, 0), m1);
         AddPortal(new Vector3(-10, 0, 6), Quaternion.Euler(0, 135, 0), m2);
@@ -186,7 +197,7 @@ public class GreyspaceScene : MonoBehaviour
         if (player && player.isDead) { player.isDead = false; player.health = player.maxHealth; }
         if (statusText) { statusText.color = new Color(0.8f, 0.07f, 0.07f); statusText.text = ""; }
 
-        SpawnWeaponPickup(ComboData.Bow(), new Color(1f, 0.85f, 0.2f), new Vector3(4f, 0, 4f));
+        SpawnWeaponPickup(ContentLibrary.Combo("Bow"), new Color(1f, 0.85f, 0.2f), new Vector3(4f, 0, 4f));
 
         StartCoroutine(WaveLoop());
         Debug.Log("Mission: " + def.displayName);

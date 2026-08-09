@@ -1,0 +1,105 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 867e5a08e6fae41fe90b00c003676f5a, type: 3}
+  m_Name: Sword
+  m_EditorClassIdentifier:
+  baseDamage: 15
+  steps:
+  - light:
+      type: 0
+      damageMultiplier: 1.0
+      range: 1.8
+      arcAngle: 90.0
+      projectileSpeed: 0
+      projectileColor: {r: 0, g: 0, b: 0, a: 0}
+      knockbackForce: 10.0
+      hitstopFrames: 4
+      windupTime: 0.05
+      hitboxDuration: 0.08
+      inputWindow: 0.5
+    heavy:
+      type: 0
+      damageMultiplier: 1.6
+      range: 2.0
+      arcAngle: 110.0
+      projectileSpeed: 0
+      projectileColor: {r: 0, g: 0, b: 0, a: 0}
+      knockbackForce: 16.0
+      hitstopFrames: 6
+      windupTime: 0.1
+      hitboxDuration: 0.12
+      inputWindow: 0.55
+  - light:
+      type: 0
+      damageMultiplier: 1.0
+      range: 1.8
+      arcAngle: 90.0
+      projectileSpeed: 0
+      projectileColor: {r: 0, g: 0, b: 0, a: 0}
+      knockbackForce: 10.0
+      hitstopFrames: 4
+      windupTime: 0.05
+      hitboxDuration: 0.08
+      inputWindow: 0.5
+    heavy:
+      type: 0
+      damageMultiplier: 1.8
+      range: 2.0
+      arcAngle: 100.0
+      projectileSpeed: 0
+      projectileColor: {r: 0, g: 0, b: 0, a: 0}
+      knockbackForce: 18.0
+      hitstopFrames: 6
+      windupTime: 0.1
+      hitboxDuration: 0.12
+      inputWindow: 0.55
+  - light:
+      type: 0
+      damageMultiplier: 1.3
+      range: 2.0
+      arcAngle: 140.0
+      projectileSpeed: 0
+      projectileColor: {r: 0, g: 0, b: 0, a: 0}
+      knockbackForce: 14.0
+      hitstopFrames: 5
+      windupTime: 0.05
+      hitboxDuration: 0.1
+      inputWindow: 0.0
+    heavy:
+      type: 0
+      damageMultiplier: 2.5
+      range: 2.2
+      arcAngle: 90.0
+      projectileSpeed: 0
+      projectileColor: {r: 0, g: 0, b: 0, a: 0}
+      knockbackForce: 28.0
+      hitstopFrames: 8
+      windupTime: 0.12
+      hitboxDuration: 0.14
+      inputWindow: 0.0
+  specialAttack:
+    type: 0
+    damageMultiplier: 2.8
+    range: 3.5
+    arcAngle: 360.0
+    projectileSpeed: 0
+    projectileColor: {r: 0, g: 0, b: 0, a: 0}
+    knockbackForce: 20.0
+    hitstopFrames: 8
+    windupTime: 0.5
+    hitboxDuration: 0.4
+    inputWindow: 0.0
+  dashMod:
+    distanceMult: 0.8
+    durationMult: 0.9
+    afterimage: 1
+    blockWindow: 0

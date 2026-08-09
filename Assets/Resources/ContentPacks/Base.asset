@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2089c505576c4f3580a53aab8015d55a, type: 3}
+  m_Name: Base
+  m_EditorClassIdentifier:
+  packId: base
+  combos:
+  - {fileID: 11400000, guid: bf434573fd284ee29cb3fd624915fca9, type: 2}
+  - {fileID: 11400000, guid: 1d4c7756c31d47979b14e632a2f1c9b9, type: 2}
+  - {fileID: 11400000, guid: 2d7928f404c24debb4a059394787ed8c, type: 2}
+  - {fileID: 11400000, guid: 5842761afb4b4a548df3dfdf38abc227, type: 2}
+  missions:
+  - {fileID: 11400000, guid: 03c219ac18da423eb4692aca430df8bc, type: 2}
+  - {fileID: 11400000, guid: 0bf28e2d5fcc4c748c330eb50117d5b6, type: 2}
+  skills:
+  - {fileID: 11400000, guid: c6787b8bc1344f449bf3d335a55d9b4c, type: 2}
+  - {fileID: 11400000, guid: b8e20612a7314441abab3a4e34726155, type: 2}
+  - {fileID: 11400000, guid: a5e93001ec6541fe9527afd1e91ce8c5, type: 2}
+  - {fileID: 11400000, guid: fab5d04797bc4f87a2c78d5582b3a3bf, type: 2}
+  - {fileID: 11400000, guid: 9c941d7dc3c444a68ed252937410894c, type: 2}

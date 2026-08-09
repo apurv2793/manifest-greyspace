@@ -15,7 +15,7 @@ public class MeleeAttack : MonoBehaviour
 
     void Start()
     {
-        if (comboData == null) comboData = ComboData.Sword();
+        if (comboData == null) comboData = ContentLibrary.Combo("Sword");
         Debug.Log("[Combat] " + comboData.name + " ready — " + comboData.steps.Length +
                   " steps | J=Light  K=Heavy");
     }
