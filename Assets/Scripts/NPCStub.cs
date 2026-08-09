@@ -39,7 +39,7 @@ public class NPCStub : MonoBehaviour
         if (player != null)
         {
             isPlayerNearby = Vector3.Distance(transform.position, player.transform.position) <= interactRadius;
-            if (isPlayerNearby && Input.GetKeyDown(KeyCode.E))
+            if (isPlayerNearby && InputRouter.InteractPressed())
                 onInteract?.Invoke();
         }
         else

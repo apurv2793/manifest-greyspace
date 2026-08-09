@@ -52,6 +52,10 @@ public class GreyspaceScene : MonoBehaviour
     {
         SetupCamera();
         SpawnPlayer();
+        // Before BuildHUD(): sets InputRouter.IsTouch synchronously (Awake() runs
+        // immediately on AddComponent), which ControlsMap.Bindings reads to decide
+        // which control list the HUD panel should show.
+        gameObject.AddComponent<TouchOverlay>(); // no-op on desktop
         BuildHUD();
         EnterHub();
         Debug.Log("Controls: WASD=Move | Mouse=Aim | J=Light | K=Heavy | Tab=Weapon | Space/Shift=Dash");
@@ -347,7 +351,7 @@ public class GreyspaceScene : MonoBehaviour
                 ? $"[LOCKED]  {nearest.mission.displayName}\n<size=15>{nearest.mission.lockedReason}</size>"
                 : $"[E]  Enter  {nearest.mission.displayName}  ({nearest.mission.waves} waves · +{nearest.mission.rewardXP} XP)";
 
-            if (!locked && Input.GetKeyDown(KeyCode.E))
+            if (!locked && InputRouter.InteractPressed())
                 EnterMission(nearest.mission);
         }
         else
@@ -360,14 +364,14 @@ public class GreyspaceScene : MonoBehaviour
     {
         if (missionComplete)
         {
-            if (Input.GetKeyDown(KeyCode.E)) EnterHub();
-            if (Input.GetKeyDown(KeyCode.R)) EnterMission(currentMission);
+            if (InputRouter.InteractPressed()) EnterHub();
+            if (InputRouter.RetryPressed()) EnterMission(currentMission);
             return;
         }
         if (playerDead)
         {
-            if (Input.GetKeyDown(KeyCode.R)) EnterMission(currentMission);
-            if (Input.GetKeyDown(KeyCode.E)) EnterHub();
+            if (InputRouter.RetryPressed()) EnterMission(currentMission);
+            if (InputRouter.InteractPressed()) EnterHub();
         }
     }
 

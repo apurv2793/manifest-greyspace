@@ -25,8 +25,8 @@ public class MeleeAttack : MonoBehaviour
     {
         if (_locked) return;
 
-        bool light = Input.GetKeyDown(KeyCode.J) || Input.GetMouseButtonDown(0);
-        bool heavy = Input.GetKeyDown(KeyCode.K) || Input.GetMouseButtonDown(1);
+        bool light = InputRouter.LightPressed();
+        bool heavy = InputRouter.HeavyPressed();
         if (!light && !heavy) return;
 
         // Window expired → restart combo from step 0

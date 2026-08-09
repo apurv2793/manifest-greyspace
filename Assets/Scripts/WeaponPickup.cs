@@ -53,7 +53,7 @@ public class WeaponPickup : MonoBehaviour
         playerNearby = playerTransform != null &&
                        Vector3.Distance(transform.position, playerTransform.position) <= interactRadius;
 
-        if (playerNearby && Input.GetKeyDown(KeyCode.E))
+        if (playerNearby && InputRouter.InteractPressed())
             PickUp();
     }
 

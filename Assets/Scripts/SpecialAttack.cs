@@ -17,7 +17,7 @@ public class SpecialAttack : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F) && Time.time >= nextSpecial)
+        if (InputRouter.SpecialPressed() && Time.time >= nextSpecial)
         {
             nextSpecial = Time.time + 2f;
             var weapon = player.CurrentWeapon;

@@ -157,6 +157,15 @@ const DATA = [
     ["b1-skillsrestore", "★ Save/reload restores unlocked skills (was BROKEN before this batch)", "Unlock 1-2 skills, save, reload — confirm they're still unlocked. Assets/Resources/Skills/ didn't exist before this batch, so SaveManager's Resources.LoadAll<SkillNode>(\"Skills\") was silently returning empty and every unlock was being discarded on load"],
     ["b1-fallback", "Renaming/removing Base.asset falls back to code, doesn't crash", "Temporarily rename Assets/Resources/ContentPacks/Base.asset, enter Play mode — should log a warning and fall back to the original ComboData.Sword()-style factories, not error. Rename it back after"],
   ]},
+  { phase: "Batch 2 (U4) — Input routing (unverified until this session — check first)", items: [
+    ["b2-desktopunchanged", "Desktop play feels byte-identical to before", "Every Input.* call site was routed through InputRouter.cs but the underlying desktop key/mouse checks are unchanged — move, aim, combo, dash, swap, interact, special, retry should all feel exactly the same as before this pass"],
+    ["b2-touchvisible", "Touch overlay appears on a touch-capable build/device", "InputRouter.IsTouch is set from Application.isMobilePlatform || Input.touchSupported in TouchOverlay.Awake() — on desktop this should stay fully invisible/inert (enabled=false), only appears when actually touch-capable"],
+    ["b2-eventsystem", "★ On-screen buttons actually respond to taps", "New code — nothing in this project used uGUI's EventTrigger/EventSystem before, had to add an EventSystem at runtime since none existed. Tap each button (LT/HV/DASH/SPEC/E/TAB/R) and confirm the action fires, not just that the button is visible"],
+    ["b2-stick", "Movement stick tracks a finger dragged from its background zone", "Touch and drag inside the bottom-left circle — knob should follow (clamped to the outer radius) and the player should move in that direction; releasing should snap back to center and stop movement"],
+    ["b2-controlsmap", "HUD controls panel shows touch bindings on a touch device, desktop bindings otherwise", "ControlsMap.Bindings now branches on InputRouter.IsTouch — verify both variants render correctly"],
+    ["b2-noaim-touch", "Known gap, not a bug: player doesn't re-aim via touch", "InputRouter.TryAimWorldPoint() deliberately returns false when IsTouch — there's no mouse to raycast from and no touch-aim scheme has been designed yet. Player should just keep facing its last direction on touch, this is flagged as a real design decision still needed, not an oversight"],
+    ["b2-androidprofile", "★ Android build profile does NOT exist yet — needs Editor, not a bug", "Unlike the .asset content files, a Build Profile references Editor-internal platform GUIDs and a platform-specific settings class (see Assets/Settings/Build Profiles/Windows.asset for the shape) that can't be safely hand-authored outside the Editor — same risk class as the URP Pipeline Assets. Create Assets/Settings/Build Profiles/Android.asset via File > Build Profiles > Add Android in the Editor"],
+  ]},
 ];
 
 const KEY = "greyspace-testing-booklet-v2";

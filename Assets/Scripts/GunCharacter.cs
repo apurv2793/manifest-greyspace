@@ -185,11 +185,8 @@ public class GunCharacter : MonoBehaviour
     void Move()
     {
         if (isDashing) return;
-        float h = 0, v = 0;
-        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) h += 1;
-        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))  h -= 1;
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))    v += 1;
-        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))  v -= 1;
+        Vector2 axis = InputRouter.MoveAxis();
+        float h = axis.x, v = axis.y;
         if (h == 0 && v == 0) return;
 
         // Camera-relative movement — W goes "into" the screen from the player's view
@@ -202,11 +199,9 @@ public class GunCharacter : MonoBehaviour
     void Aim()
     {
         if (Camera.main == null) return;
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        Plane plane = new Plane(Vector3.up, transform.position);
-        if (plane.Raycast(ray, out float dist))
+        if (InputRouter.TryAimWorldPoint(Camera.main, transform.position, out Vector3 worldPoint))
         {
-            Vector3 dir = ray.GetPoint(dist) - transform.position;
+            Vector3 dir = worldPoint - transform.position;
             dir.y = 0;
             if (dir.sqrMagnitude > 0.04f)
                 transform.rotation = Quaternion.LookRotation(dir);
@@ -216,7 +211,7 @@ public class GunCharacter : MonoBehaviour
 
     void WeaponSwitch()
     {
-        if (!Input.GetKeyDown(KeyCode.Tab)) return;
+        if (!InputRouter.SwapPressed()) return;
         if (_weapons.Count <= 1) return; // nothing to switch to
         _weaponIndex = (_weaponIndex + 1) % _weapons.Count;
         _melee.comboData = _weapons[_weaponIndex];
@@ -264,15 +259,12 @@ public class GunCharacter : MonoBehaviour
 
     void DashInput()
     {
-        bool dashPressed = Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.Space);
+        bool dashPressed = InputRouter.DashPressed();
         if (!dashPressed || Time.time < nextDash) return;
         nextDash = Time.time + dashCooldown;
 
-        float h = 0, v = 0;
-        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) h += 1;
-        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))  h -= 1;
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))    v += 1;
-        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))  v -= 1;
+        Vector2 axis = InputRouter.MoveAxis();
+        float h = axis.x, v = axis.y;
         Transform cam = Camera.main.transform;
         Vector3 fwd = cam.forward; fwd.y = 0; fwd.Normalize();
         Vector3 right = cam.right; right.y = 0; right.Normalize();
