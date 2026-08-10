@@ -11,6 +11,15 @@ not duplicated here.
 fill in the Sign-off column as you go. Rows marked 🔴 **BLOCKER** must be done first;
 other work in that batch depends on them.
 
+**Policy update:** all real testing and visual preview — for *both* projects, not just
+Unity — now happens on the Mac and gets tracked here. What runs on this Linux box
+(`npm test`, `capture.mjs`/`imagediff.mjs` pixel-diffs, `validate_assets.py`) are
+build-correctness *gates*, not a substitute for actually looking at and playing the
+result — a zero-pixel-diff proves "nothing changed," not "it looks/plays right." Rows
+below still show what those automated gates confirmed, since that's real signal and
+worth keeping, but every row's real Sign-off now happens on the Mac, including the JS
+engine rows this register previously marked fully closed.
+
 ## Plan reference
 
 Full plan: [`/home/admin/.claude/plans/enchanted-hugging-lark.md`](/home/admin/.claude/plans/enchanted-hugging-lark.md)

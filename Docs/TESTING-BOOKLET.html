@@ -166,6 +166,12 @@ const DATA = [
     ["b2-noaim-touch", "Known gap, not a bug: player doesn't re-aim via touch", "InputRouter.TryAimWorldPoint() deliberately returns false when IsTouch — there's no mouse to raycast from and no touch-aim scheme has been designed yet. Player should just keep facing its last direction on touch, this is flagged as a real design decision still needed, not an oversight"],
     ["b2-androidprofile", "★ Android build profile does NOT exist yet — needs Editor, not a bug", "Unlike the .asset content files, a Build Profile references Editor-internal platform GUIDs and a platform-specific settings class (see Assets/Settings/Build Profiles/Windows.asset for the shape) that can't be safely hand-authored outside the Editor — same risk class as the URP Pipeline Assets. Create Assets/Settings/Build Profiles/Android.asset via File > Build Profiles > Add Android in the Editor"],
   ]},
+  { phase: "Humanistic pass — player/NPC liveliness (unverified until this session — check first)", items: [
+    ["h-griphand", "Player's sword now has a visible gripping hand, not floating in space", "Look at the right hand during idle/combat — a small skin-colored sphere should sit at the sword grip, moving with the blade through swings/dashes"],
+    ["h-idlebob", "Player has a subtle idle breathing/sway motion when standing still", "Stand still for a few seconds — should see a small vertical bob + gentle sway; moving, dashing, or attacking should stop it immediately (check it doesn't fight combat animations or camera)"],
+    ["h-skintone", "Player skin tone reads warmer than before (was flat tan, now warmed)", "Cosmetic-only change to the Color values — compare against your memory of the old look"],
+    ["h-npcstub", "★ NPCStub is now a limbed figure, not a capsule + a same-colored ball", "Place/select an NPCStub in the hub — should show legs, torso, arms with hands, a skin-toned head distinct from body/clothing color, and the same subtle idle bob as the player"],
+  ]},
 ];
 
 const KEY = "greyspace-testing-booklet-v2";
