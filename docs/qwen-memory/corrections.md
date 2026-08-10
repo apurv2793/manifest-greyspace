@@ -243,6 +243,28 @@ window and gets cut off mid-decay" (the actual, now-fixed bug). Kimi's proposed 
 would remove that headroom and reintroduce the original click risk. Do not "fix"
 intentional envelope headroom without checking whether it's there on purpose.
 
+## Qwen-only verification sweep (batch 5 of ~9: combat + content_pipeline)
+
+Per your instruction, Qwen re-checked its own past findings via `qwen-code` CLI
+against the current code (real file access, no compiler on this machine so static
+only). combat: 0 TRUE / 8 STALE-CODE-CHANGED (already fixed by MaterialCache.Get()
+this session, exactly the pooling work already tracked) / 7 FALSE-or-not-checkable.
+content_pipeline: 1 TRUE, checked myself:
+
+- "`ContentLibrary`'s `_loaded` flag never resets, stale state possible" — FALSE.
+  `_loaded`/`_active` are set once on first access and cached for the app's
+  lifetime — the same deliberate "load once, keep forever" pattern already used by
+  `AudioManager`'s own bootstrap (`instance` static field). This would only matter
+  if content packs could be swapped at runtime, which isn't a feature anywhere in
+  this codebase. In the Editor, Play Mode's domain reload already resets static
+  fields to default between sessions unless that's been explicitly disabled
+  (not the case here). No real failure mode identified.
+
+Net: 0 real findings from this batch. Combat's 8 "stale-code-changed" findings
+are worth noting positively rather than as gaps — they're old material-pooling
+observations that this session's `MaterialCache.Get()` migration already resolved,
+confirmed still-fixed by Qwen's own re-read.
+
 ## Subsystems reviewed so far
 
 | Script group | Findings claimed | Findings confirmed real | Notes |
