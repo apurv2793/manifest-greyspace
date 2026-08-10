@@ -289,6 +289,12 @@ public class GreyspaceScene : MonoBehaviour
             SceneState.SetMissionResult(true, currentMission.rewardXP);
             StoryFlags.Set(currentMission.missionId + "_complete");
 
+            // Victory moment: play audio and visual effects
+            AudioManager.Play("victory");
+            VFXManager.Spawn(EffectType.LevelUpBurst, playerGO != null ? playerGO.transform.position : Vector3.zero,
+                new Color(1f, 0.9f, 0.25f));
+            CameraShake.Shake(0.6f, 1.0f);
+
             if (statusText)
             {
                 statusText.color = new Color(0.85f, 0.72f, 0.1f);
@@ -321,6 +327,13 @@ public class GreyspaceScene : MonoBehaviour
     public void OnPlayerDied()
     {
         playerDead = true;
+
+        // Death moment: play audio and visual effects
+        AudioManager.Play("death");
+        if (playerGO != null)
+            VFXManager.Spawn(EffectType.DeathBurst, playerGO.transform.position, new Color(0.6f, 0.2f, 0.1f));
+        CameraShake.Shake(0.8f, 0.5f);
+
         if (mode == Mode.Mission && statusText != null)
             statusText.text = "YOU DIED\n\n<size=22>R  —  Retry\nE  —  Return to Hub</size>";
     }

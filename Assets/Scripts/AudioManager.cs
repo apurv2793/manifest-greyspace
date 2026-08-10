@@ -24,6 +24,8 @@ public class AudioManager : MonoBehaviour
         instance.clips["hit_enemy"] = GenerateHitEnemy();
         instance.clips["level_up"] = GenerateLevelUp();
         instance.clips["wave_clear"] = GenerateWaveClear();
+        instance.clips["death"] = GenerateDeath();
+        instance.clips["victory"] = GenerateVictory();
     }
 
     public static void Play(string clipName)
@@ -268,6 +270,109 @@ public class AudioManager : MonoBehaviour
             }
 
             float shimmer = 0.05f * Random.Range(-1f, 1f);
+            samples[i] = amplitude + shimmer;
+        }
+
+        clip.SetData(samples, 0);
+        return clip;
+    }
+
+    static AudioClip GenerateDeath()
+    {
+        const int sampleRate = 44100;
+        const float duration = 2.2f; // Somber, descending - ~2.2 seconds
+        const int lengthSamples = (int)(sampleRate * duration);
+
+        var clip = AudioClip.Create("death", lengthSamples, 1, sampleRate, false);
+        var samples = new float[lengthSamples];
+
+        // Three-note descending minor chord progression: C3 → Bb2 → G2 (low register)
+        float[] notes = { 130.81f, 116.54f, 98.00f };
+        float[] noteStarts = { 0.2f, 0.7f, 1.2f }; // Staggered start with gaps for weight
+        const float noteLen = 0.6f;
+
+        for (int i = 0; i < lengthSamples; i++)
+        {
+            float t = (float)i / sampleRate;
+            float amplitude = 0f;
+
+            for (int n = 0; n < notes.Length; n++)
+            {
+                float noteStart = noteStarts[n];
+                if (t >= noteStart && t <= noteStart + noteLen)
+                {
+                    float phase = 2 * Mathf.PI * notes[n] * (t - noteStart);
+                    // Use low sustain level and long release for that "fade to black" effect
+                    float envelope = Envelope(
+                        (int)((t - noteStart) * sampleRate),
+                        (int)(noteLen * sampleRate),
+                        0.1f, 0.3f, 0.5f, 1.2f, sampleRate);
+                    amplitude += Mathf.Sin(phase) * envelope;
+                }
+            }
+
+            // Slight tremolo for extra melancholy weight
+            float tremolo = 0.8f + 0.2f * Mathf.Sin(2 * Mathf.PI * 2.5f * t);
+            samples[i] = amplitude * tremolo;
+        }
+
+        clip.SetData(samples, 0);
+        return clip;
+    }
+
+    static AudioClip GenerateVictory()
+    {
+        const int sampleRate = 44100;
+        const float duration = 3.0f; // Grand flourish - ~3 seconds
+        const int lengthSamples = (int)(sampleRate * duration);
+
+        var clip = AudioClip.Create("victory", lengthSamples, 1, sampleRate, false);
+        var samples = new float[lengthSamples];
+
+        // Extended major arpeggio: C4 → E4 → G4 → C5 → E5 → G5 → C6
+        float[] notes = { 261.63f, 329.63f, 392.00f, 523.25f, 659.25f, 783.99f, 1046.50f };
+        float noteDuration = duration / (notes.Length + 2); // Leave space for final held chord
+        const float holdNoteStart = notes.Length * noteDuration;
+        const float holdLen = 0.8f;
+
+        for (int i = 0; i < lengthSamples; i++)
+        {
+            float t = (float)i / sampleRate;
+            float amplitude = 0f;
+
+            // Play the arpeggio
+            for (int n = 0; n < notes.Length; n++)
+            {
+                float noteStart = n * noteDuration;
+                float noteEnd = noteStart + noteDuration;
+                if (t >= noteStart && t <= noteEnd)
+                {
+                    float phase = 2 * Mathf.PI * notes[n] * (t - noteStart);
+                    float envelope = Envelope(
+                        (int)((t - noteStart) * sampleRate),
+                        (int)(noteDuration * sampleRate),
+                        0.02f, 0.15f, 0.8f, 0.3f, sampleRate);
+                    amplitude += Mathf.Sin(phase) * envelope;
+                }
+            }
+
+            // Add a final sustained chord at the end
+            if (t >= holdNoteStart && t <= holdNoteStart + holdLen)
+            {
+                float heldTime = t - holdNoteStart;
+                for (int n = 0; n < notes.Length; n++)
+                {
+                    float phase = 2 * Mathf.PI * notes[n] * heldTime;
+                    // Gentle fade out on the final chord
+                    float envelope = Envelope(
+                        (int)(heldTime * sampleRate),
+                        (int)(holdLen * sampleRate),
+                        0.05f, 0.4f, 1.0f, 0.35f, sampleRate);
+                    amplitude += Mathf.Sin(phase) * envelope * 0.7f; // Slightly lower volume per note for final chord
+                }
+            }
+
+            float shimmer = 0.02f * Random.Range(-1f, 1f);
             samples[i] = amplitude + shimmer;
         }
 

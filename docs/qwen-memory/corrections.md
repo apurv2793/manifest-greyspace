@@ -44,6 +44,17 @@ is a genuine, actionable performance finding (not previously documented elsewher
 
 ## Confirmed factual corrections (Qwen got these wrong — do not repeat)
 
+### `CameraShake.Shake()`'s real parameter order is `(intensity, duration)`
+**This one's on the orchestrator, not Qwen** — a review-prompt build request stated
+"`CameraShake.Shake(float duration, float magnitude)`" without re-verifying against the
+actual method signature. The real signature (`CameraShake.cs`) is `Shake(float
+intensity, float duration)` — reversed. Qwen wrote `CameraShake.Shake(0.8f, 0.5f)` for
+a death moment and `CameraShake.Shake(0.6f, 1.0f)` for a victory moment under the wrong
+assumption; both still produce reasonable shakes purely by luck (existing call sites
+use comparable small values in both argument positions), so this wasn't worth a
+generation re-run, but any FUTURE prompt referencing this method must state the real
+order: intensity first, duration second.
+
 ### `MeleeAttack.cs` arc-angle check is correct, not a bug
 **Qwen claimed:** `Vector3.Angle(transform.forward, toE) > h.arcAngle * 0.5f` is wrong
 because "the angle between forward and offset vector is not half-arc if arc is a total
