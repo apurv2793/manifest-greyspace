@@ -243,6 +243,33 @@ window and gets cut off mid-decay" (the actual, now-fixed bug). Kimi's proposed 
 would remove that headroom and reintroduce the original click risk. Do not "fix"
 intentional envelope headroom without checking whether it's there on purpose.
 
+## Qwen-only verification sweep (batch 7 of ~9: player_input)
+
+Qwen's self-check: 2 new TRUE (InputRouter's signal-consume coalescing was already
+known, correctly not re-derived) / 4 STALE (material pooling, already fixed) /
+7 FALSE / 3 not-checkable. Checked both new claims myself:
+
+- "TouchOverlay.cs stick bounds check inconsistent (`StickRadius * 1.6f` vs.
+  `StickRadius`)" — FALSE. Different constants for different purposes, both
+  deliberate: `1.6x` is the *touch-capture* radius (line 133, a generously-sized
+  grab target — standard mobile UX, don't require pixel-perfect touch accuracy on
+  a small joystick knob), the plain radius (line 158) is the *travel clamp* once
+  already dragging. Not an inconsistency.
+- "GunCharacter.cs's `DamageFlash()` allocates a fresh `Renderer[]` every trigger
+  instead of caching it" — true as a fact, but **correcting my own batch 6 note**:
+  I'd repeated Qwen's claim that `EnemyBase.cs`'s `HitFlash()` already caches this
+  array at `Start()` as the reason a similar claim there was false. Checked it
+  properly this time — it doesn't; `EnemyBase.cs:86` also re-fetches
+  `GetComponentsInChildren<Renderer>()` fresh every single trigger, identically to
+  GunCharacter.cs. So this isn't GunCharacter lagging behind an already-fixed
+  pattern — both files do the same thing, consistently. Low-frequency event (only
+  on taking damage, not a per-frame path), not worth an isolated one-file fix;
+  if this gets optimized it should be both files together, not urgent either way.
+
+Net: 0 new actionable findings — and one useful correction to my own earlier
+verification (batch 6's EnemyBase citation), a reminder that spot-checking only a
+sample means an unchecked claim I repeated can also be wrong.
+
 ## Qwen-only verification sweep (batch 6 of ~9: enemies + polish_vfx + progression_save)
 
 Qwen's self-check produced its highest count yet (15 TRUE across the 3 files). I
