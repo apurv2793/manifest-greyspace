@@ -20,14 +20,14 @@ public class ChargerEnemy : EnemyBase
 
     protected override void BuildVisual()
     {
-        greyMat   = Mat(new Color(0.5f, 0.5f, 0.5f));
-        orangeMat = Mat(new Color(1f, 0.55f, 0f));
-        redMat    = Mat(new Color(1f, 0.1f, 0.1f));
+        greyMat   = MaterialCache.Get(new Color(0.5f, 0.5f, 0.5f));
+        orangeMat = MaterialCache.Get(new Color(1f, 0.55f, 0f));
+        redMat    = MaterialCache.Get(new Color(1f, 0.1f, 0.1f));
 
         GameObject body = P(PrimitiveType.Cube, "Body", new Vector3(0, 0.45f, 0), new Vector3(0.9f, 0.9f, 0.9f), greyMat);
         bodyRenderer = body.GetComponent<Renderer>();
 
-        GameObject horn = P(PrimitiveType.Cube, "Horn", new Vector3(0, 0.7f, 0.45f), new Vector3(0.2f, 0.2f, 0.55f), Mat(new Color(0.25f, 0.25f, 0.25f)));
+        GameObject horn = P(PrimitiveType.Cube, "Horn", new Vector3(0, 0.7f, 0.45f), new Vector3(0.2f, 0.2f, 0.55f), MaterialCache.Get(new Color(0.25f, 0.25f, 0.25f)));
         horn.transform.localRotation = Quaternion.Euler(45f, 0f, 0f);
     }
 

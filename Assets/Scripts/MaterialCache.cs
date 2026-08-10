@@ -15,7 +15,7 @@ public static class MaterialCache
 
         GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
         Material baseMat = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
-        DestroyImmediate(tmp);
+        Object.DestroyImmediate(tmp);
 
         baseMat.SetColor("_BaseColor", color);
         baseMat.color = color;

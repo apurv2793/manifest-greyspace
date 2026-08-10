@@ -19,7 +19,7 @@ public class Checkpoint : MonoBehaviour
     static readonly Color ActiveColor = new Color(1f, 0.85f, 0.1f, 1f);
 
     bool _activated;
-    Material _sphereMat;
+    Renderer _crystalRenderer;
 
     void Start()
     {
@@ -37,8 +37,8 @@ public class Checkpoint : MonoBehaviour
         crystal.transform.localScale = new Vector3(0.35f, 0.35f, 0.35f);
         Destroy(crystal.GetComponent<Collider>());
 
-        _sphereMat = MaterialCache.Get(InactiveColor);
-        crystal.GetComponent<Renderer>().material = _sphereMat;
+        _crystalRenderer = crystal.GetComponent<Renderer>();
+        _crystalRenderer.material = MaterialCache.Get(InactiveColor);
     }
 
     void Update()
@@ -55,7 +55,10 @@ public class Checkpoint : MonoBehaviour
     {
         _activated = true;
 
-        _sphereMat.SetColor("_BaseColor", ActiveColor); _sphereMat.color = ActiveColor;
+        // Swap to a different pooled material rather than mutating the one we're
+        // currently using - it's the shared InactiveColor cache entry, and recoloring
+        // it in place would recolor every other inactive checkpoint too.
+        _crystalRenderer.material = MaterialCache.Get(ActiveColor);
 
         LastActivatedPosition = transform.position;
         HasActivatedAny = true;

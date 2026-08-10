@@ -85,13 +85,15 @@ public abstract class EnemyBase : MonoBehaviour
     {
         childRenderers = GetComponentsInChildren<Renderer>();
         originalMaterials = new Material[childRenderers.Length];
-        for (int i = 0; i < childRenderers.Length; i++) originalMaterials[i] = childRenderers[i].material;
+        // sharedMaterial, not material - the getter/setter on .material auto-instantiates
+        // a per-renderer clone, which would silently defeat MaterialCache's pooling.
+        for (int i = 0; i < childRenderers.Length; i++) originalMaterials[i] = childRenderers[i].sharedMaterial;
 
         Material white = MaterialCache.Get(Color.white);
-        foreach (var r in childRenderers) r.material = white;
+        foreach (var r in childRenderers) r.sharedMaterial = white;
         yield return new WaitForSecondsRealtime(0.07f);
         for (int i = 0; i < childRenderers.Length; i++)
-            if (childRenderers[i] != null) childRenderers[i].material = originalMaterials[i];
+            if (childRenderers[i] != null) childRenderers[i].sharedMaterial = originalMaterials[i];
     }
 
     IEnumerator Die()

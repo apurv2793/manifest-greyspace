@@ -332,7 +332,7 @@ public class AudioManager : MonoBehaviour
         // Extended major arpeggio: C4 → E4 → G4 → C5 → E5 → G5 → C6
         float[] notes = { 261.63f, 329.63f, 392.00f, 523.25f, 659.25f, 783.99f, 1046.50f };
         float noteDuration = duration / (notes.Length + 2); // Leave space for final held chord
-        const float holdNoteStart = notes.Length * noteDuration;
+        float holdNoteStart = notes.Length * noteDuration;
         const float holdLen = 0.8f;
 
         for (int i = 0; i < lengthSamples; i++)

@@ -31,10 +31,12 @@ public class ShielderEnemy : EnemyBase
 
     protected override void BuildVisual()
     {
-        Material bodyMat = Mat(new Color(0.35f, 0.35f, 0.4f));
+        Material bodyMat = MaterialCache.Get(new Color(0.35f, 0.35f, 0.4f));
         P(PrimitiveType.Capsule, "Body", Vector3.up * 0.5f, new Vector3(0.8f, 0.5f, 0.8f), bodyMat);
 
-        shieldMat = Mat(new Color(0.2f, 0.4f, 1f));
+        // Per-instance clone (not a shared cache entry): this material's color is mutated
+        // at runtime (shield flash/break below), so it can't be the pooled shared instance.
+        shieldMat = new Material(MaterialCache.Get(new Color(0.2f, 0.4f, 1f)));
         shieldVisual = P(PrimitiveType.Cube, "Shield", new Vector3(0, 0.75f, 0.6f), new Vector3(1.2f, 1.1f, 0.1f), shieldMat);
     }
 

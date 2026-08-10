@@ -167,9 +167,11 @@ public class GunEnemy : MonoBehaviour
         Renderer[] rends = GetComponentsInChildren<Renderer>();
         Material[] orig = new Material[rends.Length];
         Material flash = MaterialCache.Get(Color.white);
-        for (int i = 0; i < rends.Length; i++) { orig[i] = rends[i].material; rends[i].material = flash; }
+        // sharedMaterial, not material - avoids auto-instantiating a per-renderer clone
+        // on every hit, which would defeat MaterialCache's pooling.
+        for (int i = 0; i < rends.Length; i++) { orig[i] = rends[i].sharedMaterial; rends[i].sharedMaterial = flash; }
         yield return new WaitForSeconds(0.07f);
-        for (int i = 0; i < rends.Length; i++) { if (rends[i] != null) rends[i].material = orig[i]; }
+        for (int i = 0; i < rends.Length; i++) { if (rends[i] != null) rends[i].sharedMaterial = orig[i]; }
     }
 
     IEnumerator Die()

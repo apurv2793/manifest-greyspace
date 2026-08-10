@@ -11,8 +11,8 @@ public class RangedEnemy : EnemyBase
 
     protected override void BuildVisual()
     {
-        P(PrimitiveType.Sphere, "Body",    new Vector3(0, 0.45f, 0), new Vector3(0.75f, 0.75f, 0.75f), Mat(new Color(0.1f, 0.7f, 0.65f)));
-        P(PrimitiveType.Cube,   "Antenna", new Vector3(0, 1.05f, 0), new Vector3(0.07f, 0.4f, 0.07f),  Mat(Color.white));
+        P(PrimitiveType.Sphere, "Body",    new Vector3(0, 0.45f, 0), new Vector3(0.75f, 0.75f, 0.75f), MaterialCache.Get(new Color(0.1f, 0.7f, 0.65f)));
+        P(PrimitiveType.Cube,   "Antenna", new Vector3(0, 1.05f, 0), new Vector3(0.07f, 0.4f, 0.07f),  MaterialCache.Get(Color.white));
     }
 
     protected override void UpdateBehaviour()
@@ -45,7 +45,7 @@ public class RangedEnemy : EnemyBase
         Destroy(proj.GetComponent<Collider>());
         proj.transform.localScale = Vector3.one * 0.25f;
         proj.transform.position   = transform.position;
-        proj.GetComponent<Renderer>().material = Mat(Color.red);
+        proj.GetComponent<Renderer>().material = MaterialCache.Get(Color.red);
 
         Vector3 fireDir = (player.position - transform.position); fireDir.y = 0;
         if (fireDir.sqrMagnitude > 0.001f) fireDir.Normalize(); else fireDir = transform.forward;
