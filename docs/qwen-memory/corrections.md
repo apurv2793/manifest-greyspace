@@ -140,15 +140,30 @@ type-consistency cleanup, fixed anyway since it was zero-risk.
 - "_audible() may not handle this.ac being null" — already uses optional chaining
   (`this.ac?.state === 'running'`), correctly returns false without throwing.
 
-**Not independently verified** (vague/non-actionable as stated, not concrete enough to
-check): VFXManager missing default case, disposeTitle exception handling, MaterialCache
-try-catch suggestions, best-badge CSS "may cause issues."
+**Confirmed false** (remaining 4, checked in a follow-up pass):
+- "VFXManager.Spawn missing default case for unhandled effect type" — the default case
+  already exists (`EffectCoroutine`'s switch, logs a warning and exits safely); `effect`
+  is an enum (value type), a null reference was never possible here regardless.
+- "MaterialCache needs try-catch for failed shader/material creation" — the only calls
+  involved (`CreatePrimitive`, reading its renderer's `sharedMaterial`) are built-in
+  Unity calls with no realistic runtime failure mode; a generic "add more error
+  handling" suggestion, not a concrete issue.
+- "`.ui-debrief .best-badge` CSS may cause display issues if not tested" — it's the
+  standard `display:none` → `.on{display:block}` toggle used throughout the file; the
+  claim names no actual problem.
+- "`disposeTitle` may not fully clean up DOM elements if exceptions occur" — the real
+  function is 2 lines (`el.remove()` ×2, `if`-guarded), and `.remove()` doesn't throw.
+  Nemotron also cited the wrong line range for this one (65-158 vs. the real 155-158) —
+  a sign it was working from a stale/wrong location, not the current file.
+
+**Final tally: 10 findings, 1 confirmed real (the Vector2 regression), 9 confirmed
+false.** All 10 are now checked — no open gap.
 
 **Takeaway:** same pattern as every review this session regardless of source model —
 confident, detailed, plausible-sounding claims are not evidence. This is the first
 finding from ANY reviewer (Qwen included) that was a genuine, confirmed regression
 rather than a false positive - worth noting that independent cross-review earns its
-keep even at a low hit rate (1 real finding in 5 checked).
+keep even at a low hit rate (1 real finding in 10 checked).
 
 ## Subsystems reviewed so far
 
