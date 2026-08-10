@@ -116,6 +116,40 @@ never flagged as broken (`GunCharacter.cs`, `WeaponBase.cs`, `MeleeAttack.cs`,
 from round 1's output and applied separately — a plain "apply the latest round" copy
 would have missed them entirely and left half the fix uncompiled/inconsistent.
 
+## Independent (non-Qwen) reviewer findings — nemotron via NIM
+
+First cross-check from a genuinely different model family (not Qwen, not Claude) on
+this session's Unity+JS diffs, per the "three independent reviewers" register policy.
+10 findings, spot-checked 5:
+
+**Confirmed real** — Vector3-literal regression: 4 `RectTransform.offsetMin`/
+`anchoredPosition` assignments in `GreyspaceScene.cs`'s `BuildHUD()` had drifted from
+the original `Vector2` literals to `Vector3` across this session's multiple
+regeneration rounds. **Not a compile error or behavior change** (Unity's `Vector2` has
+a documented implicit conversion from `Vector3`, silently drops z) — purely a
+type-consistency cleanup, fixed anyway since it was zero-risk.
+
+**Confirmed false** (4 of 5 spot-checked):
+- "AudioManager.cs static class contains instance members" — already fixed earlier
+  this session (nemotron was likely working from stale context, not the current file).
+- "Division by zero risk in GunCharacter.UpdateIdle if Time.deltaTime is zero" — no
+  division exists in that method at all, only `Mathf.Lerp` (multiplication-based).
+- "Potential null reference in updateDebriefScreen if game/s is null" — the existing
+  `on` boolean gate already makes this impossible (`on` can only be true if `game` is
+  truthy, since `phase` is derived from `game?.getPhase?.()`).
+- "_audible() may not handle this.ac being null" — already uses optional chaining
+  (`this.ac?.state === 'running'`), correctly returns false without throwing.
+
+**Not independently verified** (vague/non-actionable as stated, not concrete enough to
+check): VFXManager missing default case, disposeTitle exception handling, MaterialCache
+try-catch suggestions, best-badge CSS "may cause issues."
+
+**Takeaway:** same pattern as every review this session regardless of source model —
+confident, detailed, plausible-sounding claims are not evidence. This is the first
+finding from ANY reviewer (Qwen included) that was a genuine, confirmed regression
+rather than a false positive - worth noting that independent cross-review earns its
+keep even at a low hit rate (1 real finding in 5 checked).
+
 ## Subsystems reviewed so far
 
 | Script group | Findings claimed | Findings confirmed real | Notes |
