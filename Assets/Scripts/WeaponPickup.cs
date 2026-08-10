@@ -16,15 +16,10 @@ public class WeaponPickup : MonoBehaviour
 
     void Start()
     {
-        GunCharacter pc = FindObjectOfType<GunCharacter>();
+        GunCharacter pc = GunCharacter.Instance;
         playerTransform = pc != null ? pc.transform : null;
 
-        GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Material   src = tmp.GetComponent<Renderer>().sharedMaterial;
-        DestroyImmediate(tmp);
-
-        Material orbMat = new Material(src);
-        orbMat.SetColor("_BaseColor", orbColor); orbMat.color = orbColor;
+        Material orbMat = MaterialCache.Get(orbColor);
 
         orbGO = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         Destroy(orbGO.GetComponent<Collider>());
@@ -34,8 +29,7 @@ public class WeaponPickup : MonoBehaviour
         orbGO.GetComponent<Renderer>().material = orbMat;
 
         Color glowColor = orbColor; glowColor.a = 0.5f;
-        Material glowMat = new Material(src);
-        glowMat.SetColor("_BaseColor", glowColor); glowMat.color = glowColor;
+        Material glowMat = MaterialCache.Get(glowColor);
 
         glowRing = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         Destroy(glowRing.GetComponent<Collider>());
