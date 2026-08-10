@@ -20,6 +20,25 @@ below still show what those automated gates confirmed, since that's real signal 
 worth keeping, but every row's real Sign-off now happens on the Mac, including the JS
 engine rows this register previously marked fully closed.
 
+**Policy update — sign-off requires three independent reviewers.** No row in this
+register is considered signed off on the strength of a single pass, including this
+Linux-side automated/AI review pass. Every row needs three separate reviewers to
+confirm before it counts as closed — this register's "Verified here" column shows
+what's been checked *so far* (automated gates, AI code review, static consistency
+checks), not a completed sign-off.
+
+## Memory infrastructure (new this pass)
+
+Both projects now have persistent, cross-session memory for the local Qwen model that
+does the AI-authored review/fix work, so understanding compounds instead of resetting
+every call:
+- `docs/qwen-memory/corrections.md` (both repos) — durable record of every reviewed
+  claim, whether confirmed true or false, plus process notes on how the model tends to
+  fail (confident-but-wrong technical claims, hallucinated file paths, silently
+  regressing already-correct files on a later pass).
+- `docs/qwen-memory/vault/` (both repos) — an Obsidian-vault knowledge graph
+  (codegraph + graphify) of code structure and design-doc rationale.
+
 ## Plan reference
 
 Full plan: [`/home/admin/.claude/plans/enchanted-hugging-lark.md`](/home/admin/.claude/plans/enchanted-hugging-lark.md)
@@ -47,27 +66,45 @@ Unity gets a debt-paydown track" decision.
 | R-013 | 2 | Unity | 🔴 **BLOCKER** — URP Pipeline Assets (U2) | 4 quality-tier render pipeline assets | Not attempted here — plan explicitly says don't; GUID-cross-referenced, version-pinned, Editor-only | **Must be created in the Editor before U3 (material pooling) can proceed** | Not started — Mac-only | |
 | R-014 | 2 | Unity | 🔴 **BLOCKER** (newly found) — Android Build Profile | Mirrors `Windows.asset` but for Android target | Not attempted — discovered mid-task that this has the *same* risk class as URP (Editor-internal platform GUID + platform-settings class I can't safely reproduce blind) | **Create via File → Build Profiles → Add Android in the Editor** | Not started — Mac-only, same caution as R-013 | |
 | R-015 | 2 | Unity | Material pooling (U3) | Shared/pooled materials, replacing ~14 per-primitive clone sites | Not started | Blocked on R-013 | Blocked | |
+| R-016 | 3 | JS | Qwen end-to-end review — all 12 subsystems | Full-codebase AI review (materials, fx, physics, render, sky, world, weapons, ai, game, ui, audio, player, core, content), every concrete finding independently fact-checked against source | ✅ 4 subsystems clean; of 10 specific "bug" claims spot-checked elsewhere, **all 10 were false** (backwards logic, misread callee behavior, hallucinated file paths) — recorded in corrections.md so they don't resurface | Nothing code-side — no confirmed defects to fix. A human read-through of the review findings is still worth a skim | Done — no action items surfaced | |
+| R-017 | 3 | Unity | Qwen end-to-end review — all 7 script groups | Full-codebase AI review (combat, enemies, player/input, progression/save, scene/systems, polish/VFX, content pipeline), concrete findings fact-checked | ✅ Confirmed 2 real, actionable issues (material pooling, hot-path scene searches — see R-019) plus several minor ones (PenaltyManager dead code — deferred by design, WorldState leaking internal dict — fixed); many other claims checked and found false, recorded in corrections.md | Nothing further code-side pending R-019's Mac verification | Done — findings actioned in R-019 | |
+| R-018 | — | Both | AI-generated visuals roadmap + "finished game" design plans | Strategic direction docs: AAA-visuals-on-a-budget roadmap, and separate "take this to finished-game quality" design plans for both projects (menus, audio, UI/combat presentation polish) | ✅ Directionally reviewed, 2 hallucinated file-path references caught and corrected (recorded in JS corrections.md) | **Design only — nothing here has been implemented yet.** This is the next major work item, deliberately paused pending your direction/feedback before committing more build time to it | Design drafted, awaiting your review/steer | |
+| R-019 | 3 | Unity | 🐛 Confirmed fixes — material pooling + hot-path scene searches | New `MaterialCache.cs` (one shared Material per Color, replacing ~15 per-instance clone sites across enemies/player/VFX/portals/checkpoints); self-registering static registries (`EnemyBase.Active`, `GunEnemy.Active`, `Projectile.Active`, `GunCharacter.Instance`) replacing direct `FindObjectsOfType`/`FindObjectOfType` calls in `MeleeAttack`, `EnemyProjectile`, `NPCStub`, `Checkpoint`, `GreyspaceScene` | ✅ Structurally verified only: brace-balance clean across all 15 touched files, no remaining `FindObjectsOfType`/uncached-`Material` calls, cross-file symbol consistency confirmed by hand. Took 3 AI generation rounds — 2 introduced regressions in already-fixed files, caught and corrected before applying (see corrections.md process note) | 🔴 **Cannot be compile-checked on this machine (no Unity Editor/C# toolchain) — this is unverified beyond static text inspection.** Open the project, confirm it compiles with no console errors, then play — confirm enemies/player/portals/checkpoints still look and behave the same, hit-flash and death-burst VFX still fade correctly (this is the specific behavior the fix touched) | Fix applied + committed, **not yet compiled or played** | |
 
 ---
 
 ## Status as of this register
 
 **Everything doable without a Unity Editor is now done and committed**, on both
-projects. What's left is exclusively: (a) behavioral confirmation on the Mac that the
-Unity-side structural changes actually play correctly, and (b) the two Editor-only
-blockers (R-013, R-014) that unlock the remaining Unity render/build work.
+projects, including a full end-to-end AI review pass (R-016/R-017) and the confirmed
+fixes it surfaced (R-019). What's left is: (a) behavioral confirmation on the Mac that
+all the structural changes actually compile and play correctly — R-019 in particular
+has never been compiled, since this machine has no C# toolchain — and (b) the two
+Editor-only blockers (R-013, R-014) that unlock the remaining Unity render/build work.
 
-The JS side (manifest-cod-experiment) needed no Mac session at all — every gate for
-it was independently verifiable and re-verified here (build, test, pixel-diff). It's
-the one track in this whole plan that's genuinely fully done, not "done pending
-review."
+The JS side (manifest-cod-experiment) needed no Mac session at all for its original
+batches — every gate for those was independently verifiable and re-verified here
+(build, test, pixel-diff). The new AI-review pass (R-016) didn't surface any confirmed
+code defects there either.
+
+**Paused, awaiting your steer:** R-018 (the visuals roadmap + "finished game quality"
+design plans for both projects) is drafted but deliberately not yet implemented — that's
+a large amount of further build work (new menus, audio systems, UI polish, combat
+presentation) and it's worth confirming direction with you before committing more time
+to it, per the three-reviewer sign-off policy above.
 
 ## Recommended Mac session order
 
-1. **Open the project first, check the Console for import errors** — several `.asset`
-   and `.cs` files were added outside the Editor this pass (`b1-opens` in the booklet).
+1. **Open the project first, check the Console for import/compile errors** — several
+   `.asset` and `.cs` files were added or modified outside the Editor this pass
+   (`b1-opens` in the booklet). **R-019 in particular has never been compiled** — if
+   anything is going to fail to build, it's most likely one of the 15 files that fix
+   touched.
 2. R-013 (URP Pipeline Assets) — unblocks R-015 (material pooling).
 3. R-014 (Android Build Profile) — unblocks real device/touch testing.
-4. Everything else in this table, top to bottom — the 🔴 items first within each batch.
-5. Work through `TESTING-BOOKLET.html`'s Batch 1 and Batch 2 sections for the
+4. R-019 — play and confirm enemies/player/portals/checkpoints look and behave
+   unchanged, and that hit-flash/death-burst/dash-afterimage VFX still fade smoothly
+   (the specific behavior this fix's material-caching change touched).
+5. Everything else in this table, top to bottom — the 🔴 items first within each batch.
+6. Work through `TESTING-BOOKLET.html`'s Batch 1 and Batch 2 sections for the
    fine-grained gameplay-feel checks this register doesn't duplicate.
