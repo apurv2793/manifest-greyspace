@@ -223,7 +223,7 @@ public class AudioManager : MonoBehaviour
                     float envelope = Envelope(
                         (int)((t - noteStart) * sampleRate),
                         (int)(noteDuration * sampleRate),
-                        0.01f, 0.15f, 0.7f, 0.05f, sampleRate);
+                        0.005f, 0.03f, 0.7f, 0.02f, sampleRate);
                     amplitude += Mathf.Sin(phase) * envelope;
                 }
             }
@@ -264,7 +264,7 @@ public class AudioManager : MonoBehaviour
                     float envelope = Envelope(
                         (int)((t - noteStart) * sampleRate),
                         (int)(noteLen * sampleRate),
-                        0.03f, 0.1f, 0.7f, 0.2f, sampleRate);
+                        0.02f, 0.08f, 0.7f, 0.1f, sampleRate);
                     amplitude += Mathf.Sin(phase) * envelope;
                 }
             }
@@ -306,7 +306,7 @@ public class AudioManager : MonoBehaviour
                     float envelope = Envelope(
                         (int)((t - noteStart) * sampleRate),
                         (int)(noteLen * sampleRate),
-                        0.1f, 0.3f, 0.5f, 1.2f, sampleRate);
+                        0.05f, 0.15f, 0.5f, 0.35f, sampleRate);
                     amplitude += Mathf.Sin(phase) * envelope;
                 }
             }
@@ -351,7 +351,7 @@ public class AudioManager : MonoBehaviour
                     float envelope = Envelope(
                         (int)((t - noteStart) * sampleRate),
                         (int)(noteDuration * sampleRate),
-                        0.02f, 0.15f, 0.8f, 0.3f, sampleRate);
+                        0.015f, 0.1f, 0.8f, 0.15f, sampleRate);
                     amplitude += Mathf.Sin(phase) * envelope;
                 }
             }
@@ -368,7 +368,7 @@ public class AudioManager : MonoBehaviour
                         (int)(heldTime * sampleRate),
                         (int)(holdLen * sampleRate),
                         0.05f, 0.4f, 1.0f, 0.35f, sampleRate);
-                    amplitude += Mathf.Sin(phase) * envelope * 0.7f; // Slightly lower volume per note for final chord
+                    amplitude += Mathf.Sin(phase) * envelope * 0.38f; // Adjusted per-note multiplier to prevent clipping
                 }
             }
 
