@@ -243,6 +243,25 @@ window and gets cut off mid-decay" (the actual, now-fixed bug). Kimi's proposed 
 would remove that headroom and reintroduce the original click risk. Do not "fix"
 intentional envelope headroom without checking whether it's there on purpose.
 
+## Qwen-only verification sweep (batch 8 of 8, FINAL: scene_systems)
+
+Qwen's self-check: 1 new TRUE ("MaterialCache.Get() creates a temp GameObject to
+steal its material"). Checked it myself — FALSE as a bug: this is the project's own
+mandated shader-steal pattern (`Docs/LINUX-SETUP.md`'s hard constraint: no
+`Shader.Find()`, must clone from an existing primitive's `sharedMaterial`), done
+once per unique color and cached forever after. It's the deliberate, required
+design, not a defect — even Qwen's own verdict text called it "acceptable."
+Everything else this batch was FALSE/STALE-CODE-CHANGED (confirming the
+MaterialCache/registry migrations already fixed everything they were meant to).
+
+Net: 0 real findings. **This closes out the full 8-batch Qwen-only verification
+sweep** (both projects, all subsystems/script groups that had unverified findings
+left in this file's tracking table). Final tally across the whole sweep: dozens of
+claims re-checked, all but one dissolved on inspection (the `game/loadout.js` MID
+stat duplication — JS batch 1 — the sole surviving, real-but-minor finding). Every
+other "TRUE" self-verification from Qwen, across both projects, turned out false,
+already-fixed, or already-known once independently checked against real source.
+
 ## Qwen-only verification sweep (batch 7 of ~9: player_input)
 
 Qwen's self-check: 2 new TRUE (InputRouter's signal-consume coalescing was already
