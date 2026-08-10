@@ -1,20 +1,12 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+// Shader-steal pattern only (per Docs/LINUX-SETUP.md hard constraints: no Shader.Find()).
+// Cloning an existing primitive's sharedMaterial always carries the project's actual
+// default shader forward, whatever it is - explicit shader assignment isn't needed.
 public static class MaterialCache
 {
     private static readonly Dictionary<Color, Material> _cache = new Dictionary<Color, Material>();
-    private static Shader _shader;
-
-    private static Shader GetURPLitShader()
-    {
-        if (_shader == null)
-        {
-            _shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (_shader == null) _shader = Shader.Find("Standard"); // fallback
-        }
-        return _shader;
-    }
 
     public static Material Get(Color color)
     {
@@ -22,12 +14,12 @@ public static class MaterialCache
             return material;
 
         GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Material baseMat = new Material(tmp.GetComponent<Renderer>().sharedMaterial) { shader = GetURPLitShader() };
+        Material baseMat = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
         DestroyImmediate(tmp);
 
         baseMat.SetColor("_BaseColor", color);
         baseMat.color = color;
-        
+
         // VFX materials handle their own transparency settings explicitly
         // (VFXManager.MakeMat creates per-instance clones)
 
