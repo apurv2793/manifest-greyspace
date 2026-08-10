@@ -76,7 +76,8 @@ public class MeleeAttack : MonoBehaviour
         bool hitAny = false;
         int dmg = Mathf.RoundToInt(comboData.baseDamage * h.damageMultiplier);
 
-        foreach (GunEnemy e in FindObjectsOfType<GunEnemy>())
+        // Use registry instead of FindObjectsOfType for hot-path enemy lookup
+        foreach (GunEnemy e in GunEnemy.Active)
         {
             Vector3 toE = e.transform.position - transform.position;
             toE.y = 0;
@@ -89,7 +90,8 @@ public class MeleeAttack : MonoBehaviour
             hitAny = true;
         }
 
-        foreach (EnemyBase e in FindObjectsOfType<EnemyBase>())
+        // Use registry instead of FindObjectsOfType for hot-path enemy lookup
+        foreach (EnemyBase e in EnemyBase.Active)
         {
             Vector3 toE = e.transform.position - transform.position;
             toE.y = 0;
@@ -128,11 +130,7 @@ public class MeleeAttack : MonoBehaviour
         lr.positionCount = segments + 2;
         lr.widthMultiplier = heavy ? 0.07f : 0.03f;
 
-        GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Material mat = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
-        Destroy(tmp);
-        Color col = heavy ? new Color(1f, 0.45f, 0.1f) : new Color(1f, 1f, 1f);
-        mat.SetColor("_BaseColor", col); mat.color = col;
+        Material mat = MaterialCache.Get(heavy ? new Color(1f, 0.45f, 0.1f) : new Color(1f, 1f, 1f));
         lr.material = mat;
 
         float half = h.arcAngle * 0.5f;
@@ -150,7 +148,7 @@ public class MeleeAttack : MonoBehaviour
         while (elapsed < duration && go != null)
         {
             elapsed += Time.deltaTime;
-            Color c = col; c.a = Mathf.Clamp01(1f - elapsed / duration);
+            Color c = mat.color; c.a = Mathf.Clamp01(1f - elapsed / duration);
             lr.startColor = c; lr.endColor = c;
             yield return null;
         }
@@ -169,12 +167,7 @@ public class MeleeAttack : MonoBehaviour
         p.transform.localScale = Vector3.one * size;
         Object.Destroy(p.GetComponent<Collider>());
 
-        // Steal shader from a temp primitive (URP-safe)
-        GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Material mat = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
-        Object.DestroyImmediate(tmp);
-        mat.SetColor("_BaseColor", h.projectileColor);
-        mat.color = h.projectileColor;
+        Material mat = MaterialCache.Get(h.projectileColor);
         p.GetComponent<Renderer>().material = mat;
 
         Projectile proj = p.AddComponent<Projectile>();

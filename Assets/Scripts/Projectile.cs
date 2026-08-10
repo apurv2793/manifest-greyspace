@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class Projectile : MonoBehaviour
 {
@@ -10,6 +11,19 @@ public class Projectile : MonoBehaviour
 
     float travelled;
 
+    // Registry pattern for hot-path FindObjectsOfType replacement
+    public static readonly List<Projectile> Active = new List<Projectile>();
+
+    void OnEnable()
+    {
+        if (!Active.Contains(this)) Active.Add(this);
+    }
+
+    void OnDisable()
+    {
+        Active.Remove(this);
+    }
+
     void Update()
     {
         float step = speed * Time.deltaTime;
@@ -20,7 +34,8 @@ public class Projectile : MonoBehaviour
 
         if (owner == "Player")
         {
-            foreach (GunEnemy e in FindObjectsOfType<GunEnemy>())
+            // Use registry instead of FindObjectsOfType
+            foreach (GunEnemy e in GunEnemy.Active)
             {
                 if (Vector3.Distance(transform.position, e.transform.position + Vector3.up) < 0.75f)
                 {
@@ -39,10 +54,7 @@ public class Projectile : MonoBehaviour
         fx.transform.position = transform.position;
         fx.transform.localScale = Vector3.one * 0.35f;
         Destroy(fx.GetComponent<Collider>());
-        Material m = new Material(GetComponent<Renderer>().sharedMaterial);
-        m.SetColor("_BaseColor", new Color(1f, 0.45f, 0.1f));
-        m.color = new Color(1f, 0.45f, 0.1f);
-        fx.GetComponent<Renderer>().material = m;
+        fx.GetComponent<Renderer>().material = MaterialCache.Get(new Color(1f, 0.45f, 0.1f));
         Destroy(fx, 0.12f);
     }
 }

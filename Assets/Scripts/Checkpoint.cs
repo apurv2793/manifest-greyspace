@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// GLM 5.1 via Manifest OS (call_id 184) — applied as-is
+// GLM 5.1 via Manifest OS (call_id 184) — corrected: per-frame FindObjectOfType → Instance
 public class Checkpoint : MonoBehaviour
 {
     public float activateRadius = 2.5f;
@@ -28,8 +28,7 @@ public class Checkpoint : MonoBehaviour
         pillar.transform.localScale = new Vector3(0.5f, 1.0f, 0.5f);
         Destroy(pillar.GetComponent<Collider>());
 
-        Material pillarMat = new Material(pillar.GetComponent<Renderer>().sharedMaterial);
-        pillarMat.SetColor("_BaseColor", Color.grey); pillarMat.color = Color.grey;
+        Material pillarMat = MaterialCache.Get(Color.grey);
         pillar.GetComponent<Renderer>().material = pillarMat;
 
         GameObject crystal = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -38,8 +37,7 @@ public class Checkpoint : MonoBehaviour
         crystal.transform.localScale = new Vector3(0.35f, 0.35f, 0.35f);
         Destroy(crystal.GetComponent<Collider>());
 
-        _sphereMat = new Material(crystal.GetComponent<Renderer>().sharedMaterial);
-        _sphereMat.SetColor("_BaseColor", InactiveColor); _sphereMat.color = InactiveColor;
+        _sphereMat = MaterialCache.Get(InactiveColor);
         crystal.GetComponent<Renderer>().material = _sphereMat;
     }
 
@@ -47,7 +45,8 @@ public class Checkpoint : MonoBehaviour
     {
         if (_activated) return;
 
-        GunCharacter player = FindObjectOfType<GunCharacter>();
+        // Use registry instead of FindObjectOfType
+        GunCharacter player = GunCharacter.Instance;
         if (player != null && Vector3.Distance(transform.position, player.transform.position) <= activateRadius)
             Activate();
     }
@@ -61,7 +60,8 @@ public class Checkpoint : MonoBehaviour
         LastActivatedPosition = transform.position;
         HasActivatedAny = true;
 
-        GunCharacter player = FindObjectOfType<GunCharacter>();
+        // Use registry instead of FindObjectOfType
+        GunCharacter player = GunCharacter.Instance;
         if (player != null) SaveManager.Save(player.inventory);
     }
 }

@@ -40,6 +40,17 @@ public class GunCharacter : MonoBehaviour
     // Phase 4: skill tree + loadout. No UI yet — unlock/assign via Inspector or console for now.
     public PlayerInventory inventory = new PlayerInventory();
 
+    // "Humanistic" pass — idle liveliness. All primitive-built visuals parent under
+    // this instead of `transform` directly, so a subtle breathing/weight-shift bob
+    // can animate the character without touching the root transform Move()/DashInput()
+    // actually drive. Only used by the built-in primitive path (BuildPrimitiveCharacter);
+    // customVisualRoot (Option B) is a different, unrelated hook and is left alone.
+    Transform _visualRoot;
+    float _idlePhase;
+
+    // Registry pattern for hot-path FindObjectOfType replacement
+    public static GunCharacter Instance { get; private set; }
+
     // -------------------------------------------------------------------------
     void Start()
     {
@@ -61,13 +72,21 @@ public class GunCharacter : MonoBehaviour
     // =========================================================================
     void BuildPrimitiveCharacter()
     {
-        Material body   = Mat(new Color(0.17f, 0.17f, 0.22f));
-        Material accent = Mat(new Color(0.52f, 0.04f, 0.04f));
-        Material skin   = Mat(new Color(0.70f, 0.53f, 0.42f));
-        Material silver = Mat(new Color(0.76f, 0.76f, 0.86f));
-        Material gold   = Mat(new Color(0.74f, 0.60f, 0.12f));
-        Material hair   = Mat(new Color(0.07f, 0.04f, 0.04f));
-        Material eye    = Mat(new Color(0.18f, 0.38f, 0.72f));
+        GameObject visualRootGO = new GameObject("VisualRoot");
+        visualRootGO.transform.SetParent(transform, false);
+        _visualRoot = visualRootGO.transform;
+        // Per-character phase offset so multiple instances (if ever spawned) don't
+        // bob in lockstep — deterministic-enough for a purely cosmetic wobble.
+        _idlePhase = (GetInstanceID() % 1000) * 0.01f;
+
+        Material body   = MaterialCache.Get(new Color(0.17f, 0.17f, 0.22f));
+        Material accent = MaterialCache.Get(new Color(0.52f, 0.04f, 0.04f));
+        // Warmed slightly from the original flat tan for a more natural read.
+        Material skin   = MaterialCache.Get(new Color(0.76f, 0.58f, 0.46f));
+        Material silver = MaterialCache.Get(new Color(0.76f, 0.76f, 0.86f));
+        Material gold   = MaterialCache.Get(new Color(0.74f, 0.60f, 0.12f));
+        Material hair   = MaterialCache.Get(new Color(0.07f, 0.04f, 0.04f));
+        Material eye    = MaterialCache.Get(new Color(0.18f, 0.38f, 0.72f));
 
         // Cape (behind torso — drawn first so it sits behind)
         P(PrimitiveType.Cube,    "Cape",      new Vector3(0, 0.88f, -0.27f), new Vector3(0.62f, 0.95f, 0.07f), accent);
@@ -114,7 +133,7 @@ public class GunCharacter : MonoBehaviour
 
         // ---- Sword (right side, tilted) ----
         GameObject pivot = new GameObject("SwordPivot");
-        pivot.transform.SetParent(transform, false);
+        pivot.transform.SetParent(_visualRoot, false);
         pivot.transform.localPosition = new Vector3(0.44f, 0.74f, 0.08f);
         pivot.transform.localEulerAngles = new Vector3(-18f, 0, -12f);
 
@@ -122,15 +141,37 @@ public class GunCharacter : MonoBehaviour
         PC(pivot.transform, PrimitiveType.Cube,     "Guard",   new Vector3(0, 0.20f, 0),    new Vector3(0.26f, 0.04f, 0.06f), gold);
         PC(pivot.transform, PrimitiveType.Cube,     "Blade",   new Vector3(0, 0.20f+0.44f,0), new Vector3(0.055f, 0.88f, 0.04f), silver);
         PC(pivot.transform, PrimitiveType.Cube,     "Tip",     new Vector3(0, 0.20f+0.88f+0.14f,0), new Vector3(0.035f, 0.28f, 0.03f), silver);
+        // Gripping hand — closes the "floating weapon" gap: previously the sword was
+        // pivoted from empty space near the forearm with nothing actually holding it.
+        // Slightly squashed sphere reads as a closed fist at this primitive fidelity.
+        PC(pivot.transform, PrimitiveType.Sphere,   "GripHand", new Vector3(0, -0.05f, 0),  new Vector3(0.10f, 0.08f, 0.09f), skin);
 
         Debug.Log("GunCharacter: Primitive character built (Option A)");
+    }
+
+    // Idle liveliness — a small breathing/weight-shift bob on the visual root only,
+    // gated on standing still so it never fights Move()/DashInput()'s actual motion.
+    // Purely cosmetic: never touches transform.position, only the visual child.
+    void UpdateIdle()
+    {
+        if (_visualRoot == null || isDashing) return;
+        bool moving = InputRouter.MoveAxis().sqrMagnitude > 0.01f;
+        float targetBob = moving ? 0f : Mathf.Sin((Time.time + _idlePhase) * 1.6f) * 0.018f;
+        float targetSway = moving ? 0f : Mathf.Sin((Time.time + _idlePhase) * 0.8f) * 1.1f;
+        Vector3 lp = _visualRoot.localPosition;
+        lp.y = Mathf.Lerp(lp.y, targetBob, 6f * Time.deltaTime);
+        _visualRoot.localPosition = lp;
+        Vector3 le = _visualRoot.localEulerAngles;
+        float currentZ = le.z > 180f ? le.z - 360f : le.z;
+        le.z = Mathf.Lerp(currentZ, targetSway, 4f * Time.deltaTime);
+        _visualRoot.localEulerAngles = le;
     }
 
     // Helpers
     void P(PrimitiveType t, string n, Vector3 lp, Vector3 ls, Material m)
     {
         GameObject g = GameObject.CreatePrimitive(t);
-        g.name = n; g.transform.SetParent(transform, false);
+        g.name = n; g.transform.SetParent(_visualRoot, false);
         g.transform.localPosition = lp; g.transform.localScale = ls;
         Destroy(g.GetComponent<Collider>()); g.GetComponent<Renderer>().material = m;
     }
@@ -141,15 +182,6 @@ public class GunCharacter : MonoBehaviour
         g.name = n; g.transform.SetParent(parent, false);
         g.transform.localPosition = lp; g.transform.localScale = ls;
         Destroy(g.GetComponent<Collider>()); g.GetComponent<Renderer>().material = m;
-    }
-
-    static Material Mat(Color c)
-    {
-        GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Material m = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
-        DestroyImmediate(tmp);
-        m.SetColor("_BaseColor", c); m.color = c;
-        return m;
     }
 
     // =========================================================================
@@ -163,6 +195,7 @@ public class GunCharacter : MonoBehaviour
         _melee?.HandleInput();
         DashInput();
         WeaponSwitch();
+        UpdateIdle();
         if (healthFill != null)
         {
             float target = Mathf.Max(0f, (float)health / maxHealth);
@@ -323,7 +356,7 @@ public class GunCharacter : MonoBehaviour
         invincible = true;
         Renderer[] rends = GetComponentsInChildren<Renderer>();
         Material[] orig = new Material[rends.Length];
-        Material flash = Mat(new Color(1f, 0.15f, 0.15f));
+        Material flash = MaterialCache.Get(new Color(1f, 0.15f, 0.15f));
         for (int i = 0; i < rends.Length; i++) { orig[i] = rends[i].material; rends[i].material = flash; }
         yield return new WaitForSeconds(0.1f);
         for (int i = 0; i < rends.Length; i++) { if (rends[i] != null) rends[i].material = orig[i]; }
@@ -340,4 +373,15 @@ public class GunCharacter : MonoBehaviour
 
     // Phase 3 — exposes the equipped weapon for SpecialAttack.cs (fields above are private).
     public ComboData CurrentWeapon => _weapons[_weaponIndex];
+
+    void OnEnable()
+    {
+        Instance = this;
+    }
+    
+    void OnDisable()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
 }

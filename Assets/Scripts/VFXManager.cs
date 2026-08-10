@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
 
-// Groq llama-3.3-70b via Manifest OS (call_id 186) — corrected: dropped unused spawnedObjects field
 public enum EffectType { HitSparks, DeathBurst, DashAfterimage, LevelUpBurst }
 
 public class VFXManager : MonoBehaviour
@@ -29,16 +28,22 @@ public class VFXManager : MonoBehaviour
             case EffectType.DeathBurst:      yield return DeathBurst(pos, color); break;
             case EffectType.DashAfterimage:  yield return DashAfterimage(pos, color); break;
             case EffectType.LevelUpBurst:    yield return LevelUpBurst(pos, color); break;
+            default:
+                Debug.LogWarning($"VFXManager: unhandled effect type {effect}");
+                break;
         }
     }
 
     static Material MakeMat(Color color)
     {
-        GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Material mat = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
-        Destroy(tmp);
-        mat.SetColor("_BaseColor", color); mat.color = color;
-        mat.SetFloat("_Surface", 1); mat.renderQueue = 3000;
+        // Get the cached template and clone it for per-instance safety
+        Material template = MaterialCache.Get(color);
+        Material mat = new Material(template);
+
+        // Explicit transparency settings (for fade-out effects)
+        mat.SetFloat("_Surface", 1); 
+        mat.renderQueue = 3000;
+
         return mat;
     }
 

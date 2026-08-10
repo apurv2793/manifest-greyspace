@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class GunEnemy : MonoBehaviour
 {
@@ -16,6 +17,19 @@ public class GunEnemy : MonoBehaviour
     GameObject hpFill;
     float hpBarWidth = 0.88f;
 
+    // Registry pattern for hot-path FindObjectsOfType replacement
+    public static readonly List<GunEnemy> Active = new List<GunEnemy>();
+
+    void OnEnable()
+    {
+        if (!Active.Contains(this)) Active.Add(this);
+    }
+
+    void OnDisable()
+    {
+        Active.Remove(this);
+    }
+
     // -------------------------------------------------------------------------
     void Start()
     {
@@ -26,9 +40,9 @@ public class GunEnemy : MonoBehaviour
 
     void BuildBody()
     {
-        Material body  = Mat(new Color(0.38f, 0.07f, 0.07f));
-        Material dark  = Mat(new Color(0.18f, 0.03f, 0.03f));
-        Material glow  = Mat(new Color(1.0f,  0.18f, 0.08f));
+        Material body  = MaterialCache.Get(new Color(0.38f, 0.07f, 0.07f));
+        Material dark  = MaterialCache.Get(new Color(0.18f, 0.03f, 0.03f));
+        Material glow  = MaterialCache.Get(new Color(1.0f,  0.18f, 0.08f));
 
         // Legs (stubby)
         P(PrimitiveType.Cylinder, "LegL", new Vector3(-0.14f, 0.28f, 0), new Vector3(0.19f, 0.28f, 0.19f), body);
@@ -60,7 +74,7 @@ public class GunEnemy : MonoBehaviour
 
         // Axe
         P(PrimitiveType.Cylinder, "AxeHaft",  new Vector3(0.62f, 0.8f,  0.12f), new Vector3(0.06f, 0.52f, 0.06f), dark);
-        P(PrimitiveType.Cube,     "AxeHead",  new Vector3(0.60f, 1.32f, 0.08f), new Vector3(0.07f, 0.32f, 0.28f), Mat(new Color(0.42f, 0.32f, 0.32f)));
+        P(PrimitiveType.Cube,     "AxeHead",  new Vector3(0.60f, 1.32f, 0.08f), new Vector3(0.07f, 0.32f, 0.28f), MaterialCache.Get(new Color(0.42f, 0.32f, 0.32f)));
     }
 
     GameObject P(PrimitiveType t, string n, Vector3 lp, Vector3 ls, Material m)
@@ -80,23 +94,14 @@ public class GunEnemy : MonoBehaviour
         bg.transform.localPosition = new Vector3(0, y, 0);
         bg.transform.localScale   = new Vector3(0.92f, 0.08f, 0.022f);
         Destroy(bg.GetComponent<Collider>());
-        bg.GetComponent<Renderer>().material = Mat(new Color(0.12f, 0.02f, 0.02f));
+        bg.GetComponent<Renderer>().material = MaterialCache.Get(new Color(0.12f, 0.02f, 0.02f));
 
         hpFill = GameObject.CreatePrimitive(PrimitiveType.Cube);
         hpFill.name = "HPFill"; hpFill.transform.SetParent(transform, false);
         hpFill.transform.localPosition = new Vector3(0, y, -0.013f);
         hpFill.transform.localScale   = new Vector3(hpBarWidth, 0.07f, 0.025f);
         Destroy(hpFill.GetComponent<Collider>());
-        hpFill.GetComponent<Renderer>().material = Mat(new Color(0.85f, 0.1f, 0.1f));
-    }
-
-    static Material Mat(Color c)
-    {
-        GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Material m = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
-        DestroyImmediate(tmp);
-        m.SetColor("_BaseColor", c); m.color = c;
-        return m;
+        hpFill.GetComponent<Renderer>().material = MaterialCache.Get(new Color(0.85f, 0.1f, 0.1f));
     }
 
     // -------------------------------------------------------------------------
@@ -161,7 +166,7 @@ public class GunEnemy : MonoBehaviour
     {
         Renderer[] rends = GetComponentsInChildren<Renderer>();
         Material[] orig = new Material[rends.Length];
-        Material flash = Mat(Color.white);
+        Material flash = MaterialCache.Get(Color.white);
         for (int i = 0; i < rends.Length; i++) { orig[i] = rends[i].material; rends[i].material = flash; }
         yield return new WaitForSeconds(0.07f);
         for (int i = 0; i < rends.Length; i++) { if (rends[i] != null) rends[i].material = orig[i]; }

@@ -54,8 +54,7 @@ public class MissionPortal : MonoBehaviour
         g.transform.localPosition = lp;
         g.transform.localScale    = ls;
         Destroy(g.GetComponent<Collider>());
-        Material m = new Material(g.GetComponent<Renderer>().sharedMaterial);
-        m.SetColor("_BaseColor", c); m.color = c;
+        Material m = MaterialCache.Get(c);
         g.GetComponent<Renderer>().material = m;
         return g;
     }

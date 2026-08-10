@@ -39,15 +39,6 @@ public abstract class WeaponBase : MonoBehaviour
         canAttack = true;
     }
 
-    protected static Material Mat(Color c)
-    {
-        GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Material m = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
-        DestroyImmediate(tmp);
-        m.SetColor("_BaseColor", c); m.color = c;
-        return m;
-    }
-
     protected GameObject P(PrimitiveType t, string n, Vector3 lp, Vector3 ls, Material m)
     {
         GameObject g = GameObject.CreatePrimitive(t);

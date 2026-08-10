@@ -24,15 +24,13 @@ public class EnemyProjectile : MonoBehaviour
         if (_hit) return;
         transform.position += direction * moveSpeed * Time.deltaTime;
 
-        // Player proximity check — no Physics.OverlapSphere, just distance
-        GunCharacter[] players = FindObjectsOfType<GunCharacter>();
-        foreach (var pc in players)
+        // Use cached instance instead of FindObjectOfType for hot-path player lookup
+        if (GunCharacter.Instance != null && !GunCharacter.Instance.isDead)
         {
-            if (pc.isDead) continue;
-            if (Vector3.Distance(transform.position, pc.transform.position) < 0.5f)
+            if (Vector3.Distance(transform.position, GunCharacter.Instance.transform.position) < 0.5f)
             {
                 _hit = true;
-                pc.TakeDamage(damage, transform.position, knockback);
+                GunCharacter.Instance.TakeDamage(damage, transform.position, knockback);
                 Destroy(gameObject);
                 return;
             }

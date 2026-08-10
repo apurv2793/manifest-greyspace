@@ -269,7 +269,8 @@ public class GreyspaceScene : MonoBehaviour
                 }
             }
 
-            while (!playerDead && (FindObjectsOfType<GunEnemy>().Length + FindObjectsOfType<EnemyBase>().Length) > 0)
+            // Use registry instead of FindObjectsOfType for hot-path enemy lookup
+            while (!playerDead && (GunEnemy.Active.Count + EnemyBase.Active.Count) > 0)
                 yield return new WaitForSeconds(0.4f);
 
             if (!playerDead)
@@ -443,7 +444,7 @@ public class GreyspaceScene : MonoBehaviour
         RectTransform wrt = wGO.GetComponent<RectTransform>();
         wrt.anchorMin = new Vector2(0, 1); wrt.anchorMax = Vector2.one;
         wrt.pivot = new Vector2(0.5f, 1);
-        wrt.offsetMin = new Vector2(0, -55); wrt.offsetMax = Vector2.zero;
+        wrt.offsetMin = new Vector3(0, -55); wrt.offsetMax = Vector2.zero;
 
         // Status / death / complete (center)
         GameObject sGO = Rect(hudRoot.transform, "StatusText");
@@ -465,7 +466,7 @@ public class GreyspaceScene : MonoBehaviour
         promptText.supportRichText = true;
         RectTransform prt = pGO.GetComponent<RectTransform>();
         prt.anchorMin = Vector2.zero; prt.anchorMax = Vector2.one;
-        prt.offsetMin = new Vector2(0, 24); prt.offsetMax = Vector2.zero;
+        prt.offsetMin = new Vector3(0, 24); prt.offsetMax = Vector2.zero;
 
         // Weapon label
         GameObject wlGO = Rect(hudRoot.transform, "WeaponLabel");
@@ -476,7 +477,7 @@ public class GreyspaceScene : MonoBehaviour
         wlText.text = "Sword  [TAB to switch]";
         RectTransform wlrt = wlGO.GetComponent<RectTransform>();
         wlrt.anchorMin = wlrt.anchorMax = wlrt.pivot = Vector2.zero;
-        wlrt.anchoredPosition = new Vector2(22, 50); wlrt.sizeDelta = new Vector2(260, 20);
+        wlrt.anchoredPosition = new Vector3(22, 50); wlrt.sizeDelta = new Vector2(260, 20);
 
         GunCharacter pc = playerGO?.GetComponent<GunCharacter>();
         if (pc != null) { pc.healthFill = healthFill; pc.weaponLabel = wlText; }
@@ -490,7 +491,7 @@ public class GreyspaceScene : MonoBehaviour
         ctrlText.text = string.Join("\n", ControlsMap.Bindings);
         RectTransform ctrlrt = ctrlGO.GetComponent<RectTransform>();
         ctrlrt.anchorMin = ctrlrt.anchorMax = ctrlrt.pivot = new Vector2(1, 1);
-        ctrlrt.anchoredPosition = new Vector2(-16, -16);
+        ctrlrt.anchoredPosition = new Vector3(-16, -16);
         ctrlrt.sizeDelta = new Vector2(260, 20 * ControlsMap.Bindings.Length);
     }
 
@@ -551,8 +552,9 @@ public class GreyspaceScene : MonoBehaviour
 
     void ClearEnemies()
     {
-        foreach (GunEnemy e in FindObjectsOfType<GunEnemy>()) Destroy(e.gameObject);
-        foreach (Projectile p in FindObjectsOfType<Projectile>()) Destroy(p.gameObject);
+        foreach (GunEnemy e in GunEnemy.Active) Destroy(e.gameObject);
+        // Use Projectile registry instead of FindObjectsOfType
+        foreach (Projectile p in Projectile.Active) Destroy(p.gameObject);
     }
 
     void Tile(Vector3 pos, Color c)
@@ -562,7 +564,7 @@ public class GreyspaceScene : MonoBehaviour
         t.transform.position = pos;
         t.transform.localScale = new Vector3(0.98f, 0.07f, 0.98f);
         Destroy(t.GetComponent<Collider>());
-        t.GetComponent<Renderer>().material = Mat(c);
+        t.GetComponent<Renderer>().material = MaterialCache.Get(c);
     }
 
     GameObject Block(Vector3 pos, Vector3 scale, Color c)
@@ -571,7 +573,7 @@ public class GreyspaceScene : MonoBehaviour
         g.transform.SetParent(worldRoot.transform);
         g.transform.position = pos; g.transform.localScale = scale;
         Destroy(g.GetComponent<Collider>());
-        g.GetComponent<Renderer>().material = Mat(c);
+        g.GetComponent<Renderer>().material = MaterialCache.Get(c);
         return g;
     }
 
@@ -581,17 +583,8 @@ public class GreyspaceScene : MonoBehaviour
         g.transform.SetParent(worldRoot.transform);
         g.transform.position = pos; g.transform.localScale = scale;
         Destroy(g.GetComponent<Collider>());
-        g.GetComponent<Renderer>().material = Mat(c);
+        g.GetComponent<Renderer>().material = MaterialCache.Get(c);
         return g;
-    }
-
-    static Material Mat(Color c)
-    {
-        GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Material m = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
-        DestroyImmediate(tmp);
-        m.SetColor("_BaseColor", c); m.color = c;
-        return m;
     }
 
     static GameObject Rect(Transform parent, string name)

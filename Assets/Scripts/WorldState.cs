@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 
-// GLM 5.1 via Manifest OS (call_id 181) — applied as-is
 public static class WorldState
 {
     static readonly Dictionary<string, string> _dict = new Dictionary<string, string>();
@@ -15,7 +14,8 @@ public static class WorldState
 
     public static void ClearAll() => _dict.Clear();
 
-    public static Dictionary<string, string> GetAll() => _dict;
+    // Return a copy to prevent direct mutation of the live state
+    public static Dictionary<string, string> GetAll() => new Dictionary<string, string>(_dict);
 
     public static void LoadFrom(Dictionary<string, string> data)
     {

@@ -79,6 +79,32 @@ unconsumed window (a few ms at 60-144fps), far faster than realistic human tap s
 Log as a minor, low-priority note, not a critical input-loss bug as the original framing
 implied.
 
+## Process note: Qwen regresses previously-correct files when asked to touch them again
+
+The material-pooling + FindObjectsOfType-hot-path fix took 3 generation rounds to land
+correctly, and the pattern each time was the same: files Qwen got RIGHT in an earlier
+round would silently revert to the WRONG pattern in a later round, even when that later
+round's prompt never asked it to change that specific file's already-correct logic.
+Concretely: round 1 correctly routed `GunEnemy.cs` and `NPCStub.cs` through the new
+shared `MaterialCache.Get()`. Round 2 (asked to fix unrelated compile errors + expand
+scope to other files) silently reverted `GunEnemy.cs` back to a local, uncached
+`Mat()` helper. Round 3 (asked to fix only `GunEnemy.cs` + add one missing `using` line
+to `EnemyBase.cs`) correctly fixed `GunEnemy.cs` back, but introduced the SAME
+regression fresh into `EnemyBase.cs` — which had been correct since round 1 and was
+never supposed to change beyond the one import line.
+
+**What this means for how multi-file fix rounds get applied:** never trust "the last
+round's output" as the source of truth for a file just because it's the most recent.
+Diff every regenerated file against the last known-correct version of *that specific
+file*, not just against the immediately-prior round. When applying a multi-round fix,
+build the final file set by taking each file's best verified-correct version across
+ALL rounds, not just the latest round's output wholesale — several files that were
+never flagged as broken (`GunCharacter.cs`, `WeaponBase.cs`, `MeleeAttack.cs`,
+`EnemyProjectile.cs`, `SpecialAttack.cs`) were also never re-applied by later rounds
+(since Qwen correctly didn't re-output unchanged files) and had to be manually pulled
+from round 1's output and applied separately — a plain "apply the latest round" copy
+would have missed them entirely and left half the fix uncompiled/inconsistent.
+
 ## Subsystems reviewed so far
 
 | Script group | Findings claimed | Findings confirmed real | Notes |

@@ -44,7 +44,7 @@ public class SpecialAttack : MonoBehaviour
         bool hitAny = false;
         int dmg = Mathf.RoundToInt(player.CurrentWeapon.baseDamage * h.damageMultiplier);
 
-        foreach (GunEnemy e in FindObjectsOfType<GunEnemy>())
+        foreach (GunEnemy e in GunEnemy.Active)
         {
             Vector3 toE = e.transform.position - transform.position;
             toE.y = 0;
@@ -54,7 +54,8 @@ public class SpecialAttack : MonoBehaviour
             VFXManager.Spawn(EffectType.HitSparks, e.transform.position + Vector3.up * 1f, Color.white);
             hitAny = true;
         }
-        foreach (EnemyBase e in FindObjectsOfType<EnemyBase>())
+        
+        foreach (EnemyBase e in EnemyBase.Active)
         {
             Vector3 toE = e.transform.position - transform.position;
             toE.y = 0;
@@ -64,6 +65,7 @@ public class SpecialAttack : MonoBehaviour
             VFXManager.Spawn(EffectType.HitSparks, e.transform.position + Vector3.up * 1f, Color.white);
             hitAny = true;
         }
+        
         if (hitAny) { CombatFeel.HitStop(h.hitstopFrames); AudioManager.Play("hit_enemy"); }
     }
 
@@ -84,11 +86,7 @@ public class SpecialAttack : MonoBehaviour
             p.transform.position = spawn;
             Object.Destroy(p.GetComponent<Collider>());
 
-            GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            Material mat = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
-            Object.DestroyImmediate(tmp);
-            mat.SetColor("_BaseColor", h.projectileColor);
-            mat.color = h.projectileColor;
+            Material mat = MaterialCache.Get(h.projectileColor);
             p.GetComponent<Renderer>().material = mat;
 
             Projectile proj = p.AddComponent<Projectile>();
@@ -111,11 +109,7 @@ public class SpecialAttack : MonoBehaviour
         Object.Destroy(p.GetComponent<Collider>());
         p.transform.position = spawn;
 
-        GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Material mat = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
-        Object.DestroyImmediate(tmp);
-        mat.SetColor("_BaseColor", h.projectileColor);
-        mat.color = h.projectileColor;
+        Material mat = MaterialCache.Get(h.projectileColor);
         p.GetComponent<Renderer>().material = mat;
 
         Vector3 dir = transform.forward;
@@ -130,7 +124,7 @@ public class SpecialAttack : MonoBehaviour
             p.transform.position += dir * speed * Time.deltaTime;
             distTraveled += speed * Time.deltaTime;
 
-            foreach (GunEnemy e in FindObjectsOfType<GunEnemy>())
+            foreach (GunEnemy e in GunEnemy.Active)
             {
                 if (!hitEnemies.Contains(e.gameObject) && Vector3.Distance(e.transform.position, p.transform.position) <= 1f)
                 {
@@ -141,7 +135,8 @@ public class SpecialAttack : MonoBehaviour
                     hitsTaken++;
                 }
             }
-            foreach (EnemyBase e in FindObjectsOfType<EnemyBase>())
+            
+            foreach (EnemyBase e in EnemyBase.Active)
             {
                 if (!hitEnemies.Contains(e.gameObject) && Vector3.Distance(e.transform.position, p.transform.position) <= 1f)
                 {

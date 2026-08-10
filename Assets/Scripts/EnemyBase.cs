@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 // GLM 5.1 via Manifest OS (call_id 162) — corrected: URP _BaseColor, P() parent, GameEvents stub removed
 public abstract class EnemyBase : MonoBehaviour
@@ -28,6 +29,19 @@ public abstract class EnemyBase : MonoBehaviour
         maxHealth = health;
         BuildHPBar();
         BuildVisual();
+    }
+
+    // Registry pattern for hot-path FindObjectsOfType replacement
+    public static readonly List<EnemyBase> Active = new List<EnemyBase>();
+
+    protected virtual void OnEnable()
+    {
+        if (!Active.Contains(this)) Active.Add(this);
+    }
+
+    protected virtual void OnDisable()
+    {
+        Active.Remove(this);
     }
 
     protected abstract void BuildVisual();
@@ -73,7 +87,7 @@ public abstract class EnemyBase : MonoBehaviour
         originalMaterials = new Material[childRenderers.Length];
         for (int i = 0; i < childRenderers.Length; i++) originalMaterials[i] = childRenderers[i].material;
 
-        Material white = Mat(Color.white);
+        Material white = MaterialCache.Get(Color.white);
         foreach (var r in childRenderers) r.material = white;
         yield return new WaitForSecondsRealtime(0.07f);
         for (int i = 0; i < childRenderers.Length; i++)
@@ -103,8 +117,8 @@ public abstract class EnemyBase : MonoBehaviour
     void BuildHPBar()
     {
         float y = 2.4f;
-        hpBarBg   = P(PrimitiveType.Cube, "HPBg",   new Vector3(0, y, 0),        new Vector3(0.92f, 0.08f, 0.022f), Mat(new Color(0.12f, 0.02f, 0.02f)));
-        hpBarFill = P(PrimitiveType.Cube, "HPFill", new Vector3(0, y, -0.013f),  new Vector3(0.88f, 0.07f, 0.025f), Mat(new Color(0.85f, 0.1f, 0.1f)));
+        hpBarBg   = P(PrimitiveType.Cube, "HPBg",   new Vector3(0, y, 0),        new Vector3(0.92f, 0.08f, 0.022f), MaterialCache.Get(new Color(0.12f, 0.02f, 0.02f)));
+        hpBarFill = P(PrimitiveType.Cube, "HPFill", new Vector3(0, y, -0.013f),  new Vector3(0.88f, 0.07f, 0.025f), MaterialCache.Get(new Color(0.85f, 0.1f, 0.1f)));
         hpBarBaseScale = hpBarFill.transform.localScale;
         hpBarBasePos   = hpBarFill.transform.localPosition;
     }
@@ -120,15 +134,6 @@ public abstract class EnemyBase : MonoBehaviour
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-    protected static Material Mat(Color c)
-    {
-        GameObject tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Material m = new Material(tmp.GetComponent<Renderer>().sharedMaterial);
-        DestroyImmediate(tmp);
-        m.SetColor("_BaseColor", c); m.color = c;
-        return m;
-    }
-
     protected GameObject P(PrimitiveType t, string n, Vector3 lp, Vector3 ls, Material m)
     {
         GameObject g = GameObject.CreatePrimitive(t);
