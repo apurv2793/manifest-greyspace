@@ -13,6 +13,12 @@ the interactive [`TESTING-BOOKLET.html`](TESTING-BOOKLET.html), not duplicated h
 
 ## How to use this — the feedback loop
 
+**Two separate testing tracks, at the bottom of this doc:** [JS Testing Track](#js-testing-track--do-this-now-no-mac-needed)
+(do it now, in a browser, no Mac needed) and [Unity Testing Track](#unity-testing-track--mac-session-required)
+(needs the Mac/Editor). Each is a self-contained, ordered walkthrough — start there if
+you just want a checklist to run through. The Register table below is the underlying
+detail each track's steps point back to.
+
 1. Work the **Register** table top to bottom. Rows marked 🔴 **BLOCKER** first —
    other work in that batch depends on them.
 2. For each row, actually test it (Editor, Play mode, or the JS build), then fill in
@@ -89,7 +95,14 @@ Unity gets a debt-paydown track" decision.
 | R-019 | 3 | Unity | 🐛 Confirmed fixes — material pooling + hot-path scene searches | New `MaterialCache.cs` (one shared Material per Color, replacing ~15 per-instance clone sites across enemies/player/VFX/portals/checkpoints); self-registering static registries (`EnemyBase.Active`, `GunEnemy.Active`, `Projectile.Active`, `GunCharacter.Instance`) replacing direct `FindObjectsOfType`/`FindObjectOfType` calls in `MeleeAttack`, `EnemyProjectile`, `NPCStub`, `Checkpoint`, `GreyspaceScene` | ✅ Structurally verified only: brace-balance clean across all 15 touched files, no remaining `FindObjectsOfType`/uncached-`Material` calls, cross-file symbol consistency confirmed by hand. Took 3 AI generation rounds — 2 introduced regressions in already-fixed files, caught and corrected before applying (see corrections.md process note). One post-commit correction: `MaterialCache.cs` used `Shader.Find()`, which violates a documented project hard constraint (shader-steal pattern only) — fixed | 🔴 **Cannot be compile-checked on this machine (no Unity Editor/C# toolchain) — this is unverified beyond static text inspection.** Open the project, confirm it compiles with no console errors, then play — confirm enemies/player/portals/checkpoints still look and behave the same, hit-flash and death-burst VFX still fade correctly (this is the specific behavior the fix touched) | Fix applied + committed, **not yet compiled or played** | ⬜ |
 | R-020 | 4 | JS | Title screen + settings + radio-chatter wiring | New `src/ui/title.js` (UI-layer gate, independent of the game's boot->deploy auto-transition), settings modal reusing `ctx.settings`, `src/audio/vox.js` wired to round-start/kills/low-health via `ctx.events` | ✅✅ 238/238 tests pass, isolated before/after pixel-diff = 0 (both gated behind `!ctx.config.deterministic`, same as the existing pause menu). **Live-tested in a real browser, not just pixel-diff** — full click flow (title → settings → back → deploy → loadout menu) exercised via direct DOM dispatch. Found and fixed 5 real issues during review/live-testing: a missing import (hard crash), a phase-gating bug that made the title flash for one frame and vanish, a duplicate unwired settings file (dropped), a CSS bug showing the settings modal without opening it, and a z-order bug from a later fix that made the title unclickable. Also acted on live user feedback ("game starts abruptly") — deploy/debrief are now full-screen menu backdrops instead of small panels floating over an already-running game | Nothing — fully verified here, including live interaction, not just static gates | Done | ✅ |
 | R-021 | 4 | Unity | Procedural audio — `AudioManager.cs` no-op stub replaced | Now 8 sounds total (`dash`, `player_hit`, `sword_swing`, `hit_enemy`, `level_up`, `wave_clear`, plus `death`/`victory` added in R-022) synthesized at bootstrap via `AudioClip.Create` + a hand-rolled envelope, played through a pooled `AudioSource` set — no audio assets, same approach already proven in the JS sibling project | ✅ Structurally verified only: brace-balance clean, no `Shader.Find()`, all sound names present with the unchanged `Play(string)` signature every call site uses. One severe bug caught before applying: the generated code declared the class `static` while also adding instance members and `AddComponent<AudioManager>()` — a flat C# contradiction, would not compile — fixed by following `VFXManager.cs`'s already-proven bootstrap pattern in this same codebase. Also fixed a `spatialBlend` bug that would have made every hit/UI sound fade with player distance from world origin | 🔴 **Cannot be compiled or heard on this machine.** Open the project, confirm it compiles, then play and confirm all 8 sounds actually play and sound reasonable (not just silent/erroring) | Fix applied + committed, **not yet compiled or heard** | ⬜ |
-| R-022 | 4 | Unity | Death + mission-complete presentation | `OnPlayerDied()` and the mission-complete block now each play a dedicated sound ("death"/"victory"), spawn a VFX burst (reusing existing `DeathBurst`/`LevelUpBurst` effect types), and trigger `CameraShake` | ✅ Structurally verified only: brace-balance clean, no `Shader.Find()`/namespaces, all reused method calls checked against real signatures. One orchestrator error caught: `CameraShake.Shake()`'s real parameter order is `(intensity, duration)`, a build prompt stated it backwards — the actual call-site values still land in a reasonable range either way (compared to existing usage elsewhere), not worth a regeneration, but recorded in corrections.md. One minor known imperfection: the victory sound's final chord is calculated to release ~0.13s past the clip's total duration, so it'll end very slightly abruptly on a real device — cosmetic, not a bug | 🔴 **Cannot be compiled or heard here.** Play, die once and win once, confirm both moments have real weight (sound + visual burst + shake) and the victory sound's ending doesn't read as jarring | Fix applied + committed, **not yet compiled or heard** | ⬜ |
+| R-022 | 4 | Unity | Death + mission-complete presentation | `OnPlayerDied()` and the mission-complete block now each play a dedicated sound ("death"/"victory"), spawn a VFX burst (reusing existing `DeathBurst`/`LevelUpBurst` effect types), and trigger `CameraShake` | ✅ Structurally verified only: brace-balance clean, no `Shader.Find()`/namespaces, all reused method calls checked against real signatures. One orchestrator error caught: `CameraShake.Shake()`'s real parameter order is `(intensity, duration)`, a build prompt stated it backwards — the actual call-site values still land in a reasonable range either way (compared to existing usage elsewhere), not worth a regeneration, but recorded in corrections.md. **Superseded by R-027 below**, which found and properly fixed the "ends abruptly" imperfection this row flagged as cosmetic — it was actually one of four real click/pop bugs | 🔴 **Cannot be compiled or heard here.** Play, die once and win once, confirm both moments have real weight (sound + visual burst + shake) | Fix applied + committed, **not yet compiled or heard** | ⬜ |
+| R-023 | 5 | Both | Independent reviewer pass — nemotron (NIM) + Fable (end-to-end) | Two more independent AI models (neither Qwen, neither Claude) reviewed everything built so far, per the "three independent reviewers before sign-off" policy. Fable additionally ran its own verification (executed `npm test` itself, grepped source to confirm claims before reporting them) rather than reasoning from a diff alone | nemotron: 10 findings, spot-checked all 10 by hand — 1 real (the Vector2 regression, long since fixed), 9 false. Fable: markedly higher hit rate — every concrete claim it made checked out true on independent re-verification (see R-024 through R-029). Both repos' `docs/qwen-memory/corrections.md` updated with the full results so nothing here needs re-checking later | Still pending, deferred by your own instruction: **Kimi CLI** (Mac, after 2pm) and **Laguna** (Mac, once its backlog clears, ~2 days out) — not yet gathered | Done — findings actioned in the rows below | ✅ |
+| R-024 | 5 | Unity | 🔴 **CRITICAL — 3 compile blockers fixed** | The project would **not have compiled** on the Mac as committed, before this fix: (1) `Mat()` was deleted from `EnemyBase.cs`/`WeaponBase.cs` in an earlier round, but `RangedEnemy.cs`, `ChargerEnemy.cs`, `ShielderEnemy.cs` — files that round never touched — still called it; (2) `MaterialCache.cs` had an unqualified `DestroyImmediate()` call inside a `static class` with no way to resolve it; (3) `AudioManager.cs`'s victory-sound generator tried to mark a value `const` that isn't a compile-time constant | Verified true by grep before touching anything — confirmed `Mat(` calls existed with no matching definition anywhere, confirmed the missing qualifier, confirmed the non-constant `const` line | 🔴 **This is the first thing to check on the Mac.** Open the project, look at the Console — confirm zero red compile errors before doing anything else | Fixed + committed (`6fe78ed`), **not yet compiled on the actual Editor** | ⬜ |
+| R-025 | 5 | Unity | 🐛 Checkpoint material cache-poisoning fix | Activating one checkpoint was silently recoloring **every other inactive checkpoint** in the level — the "activated" color change was applied to the shared pooled material instead of swapping to a separate one | Verified true by reading the actual code (the mutation was there exactly as claimed); fix swaps to a distinct cached material on activation instead of recoloring in place | 🔴 If your test level has 2+ checkpoints: activate one, confirm the others stay their original (inactive) color instead of also turning gold | Fixed + committed, **not yet played** | ⬜ |
+| R-026 | 5 | Unity | 🐛 Hit-flash pooling-defeat fix | The "flash white briefly when hit" effect was silently undoing the material-pooling optimization from R-019 the moment anything took a hit (Unity auto-clones a material the first time code reads/writes `.material` instead of `.sharedMaterial`) | Verified true against Unity's own documented `Renderer.material` behavior | Confirm hit-flash still looks the same (brief white flash, reverts cleanly) — if you have time, also check the Profiler's material count doesn't keep climbing through a long fight, which is what this was actually fixing | Fixed + committed, **not yet played** | ⬜ |
+| R-027 | 5 | Unity | 🐛 Audio envelope/gate mismatch + victory-chord clipping fix | 4 of the 8 procedural sounds (death, level-up, wave-clear, victory's rising arpeggio) were getting cut off mid-fade instead of finishing their envelope — an audible click or pop on every note. Separately, victory's final held chord (7 notes at once) risked distorting at the loudest moment | Independently re-derived the exact cutoff percentages myself from the actual envelope math before trusting the finding (42%, 86%, 28%, 36% — all four matched exactly); fix generated by Qwen, diff double-checked — exactly 5 lines changed, nothing else touched, all four new envelope timings re-confirmed to actually fit their note windows | 🔴 Listen to all 4: die once (death sting), level up once, clear a wave, and win once — listen specifically to whether the victory ending's final chord sounds clean or distorted | Fixed + committed, **not yet heard** | ⬜ |
+| R-028 | 5 | JS | 🐛 Vox misattribution + quality persistence + dead code/CSS cleanup | Kill-streak/"first kill" voice lines were triggering off **anyone's** death in the level, not just your own kills; your graphics-quality choice silently reset every time you reopened the game; a settings-button highlight was unreachable dead code; ~31 lines of dead unused CSS left over from a dropped screen | Verified true against source before fixing all 4; 238/238 automated tests pass after the fix; pixel-baseline re-captured and confirmed byte-identical to what was already committed (zero visual change, as expected) | Nothing — fully verified here, no Mac needed for this one | Done | ✅ |
+| R-029 | 5 | JS | 🐛 Kill-streak retrigger + low-health regen-reset fix | The kill-streak sound replays on every kill once you're 3+ kills deep in a 10-second window, instead of once per streak. The low-health warning can go silent after you heal back to full and then take a big hit — because its "reset" only runs on damage events, never on healing | Verified true against source. Fix request prepared and handed to Qwen; **still queued as of this register update**, respecting the 10-minute cooldown between local Qwen calls | Nothing — will be fully verified here once applied, no Mac needed | **In progress — not yet applied.** Will update this row the moment it lands | ⬜ |
 
 ---
 
@@ -163,9 +176,37 @@ clearing a wave, dying, winning a mission) and sounds reasonable, not silent or 
 
 ### R-022 — Death + mission-complete presentation (Unity)
 **Test:** Die once and win a mission once. Confirm both moments have real weight (sound,
-visual burst, camera shake) instead of just a text swap. Listen for whether the victory
-sound's ending feels jarring (flagged as a known, minor, un-fixed imperfection).
+visual burst, camera shake) instead of just a text swap.
 **Notes:** _(your notes here)_
+
+### R-024 — 🔴 3 compile blockers (Unity, CRITICAL)
+**Test:** Open the project, check the Console for red compile errors before doing
+anything else. If this fails, nothing else in this register can be tested — tell me
+immediately and paste the exact error.
+**Notes:** _(your notes here)_
+
+### R-025 — Checkpoint cache-poisoning fix (Unity)
+**Test:** If your test level has 2+ checkpoints, activate one and confirm the others
+keep their original inactive color instead of also turning gold.
+**Notes:** _(your notes here)_
+
+### R-026 — Hit-flash pooling-defeat fix (Unity)
+**Test:** Get hit a few times (player or enemy), confirm the white flash still looks
+right — brief flash, clean revert to the normal color, nothing stuck white or flickering.
+**Notes:** _(your notes here)_
+
+### R-027 — Audio envelope/gate mismatch + victory-chord clipping fix (Unity)
+**Test:** Die once, level up once, clear a wave, and win once. Listen for clicks/pops
+on each, and listen closely to whether victory's final chord sounds clean (not
+distorted/crackly).
+**Notes:** _(your notes here)_
+
+### R-029 — Kill-streak retrigger + low-health regen-reset fix (JS)
+**Test:** Get a 3+ kill streak, confirm the streak sound plays once (not on every
+kill after the 3rd). Separately: let health regen back to full, then take a big hit
+that drops you straight below 25% — confirm the low-health warning still plays.
+**Notes:** _(your notes here — this row will show as in-progress until the fix lands;
+I'll let you know when it's ready to test)_
 
 ---
 
@@ -182,41 +223,109 @@ batches, same fact-checking against real source before anything gets applied.
 ## Status as of this register
 
 **Everything doable without a Unity Editor is now done and committed**, on both
-projects, including a full end-to-end AI review pass (R-016/R-017) and the confirmed
-fixes it surfaced (R-019). What's left is: (a) behavioral confirmation on the Mac that
-all the structural changes actually compile and play correctly — R-019 in particular
-has never been compiled, since this machine has no C# toolchain — and (b) the two
-Editor-only blockers (R-013, R-014) that unlock the remaining Unity render/build work.
+projects. This pass added a second and third independent review (nemotron, Fable —
+R-023) on top of the earlier Qwen self-review (R-016/R-017), and Fable's pass in
+particular surfaced real problems: **the Unity project would not have compiled** as
+committed (R-024) — now fixed, but genuinely unverified until someone opens it in the
+actual Editor. Everything fixed this round (R-024–R-029) is either committed-but-
+unverified (Unity — needs the Mac) or committed-and-fully-verified (JS — didn't need
+the Mac). One JS fix (R-029) is still in progress as of this register update — I'll
+update that row the moment it lands.
 
-The JS side (manifest-cod-experiment) needed no Mac session at all for its original
-batches — every gate for those was independently verifiable and re-verified here
-(build, test, pixel-diff). The new AI-review pass (R-016) didn't surface any confirmed
-code defects there either.
+The two Editor-only blockers from earlier (R-013, R-014) still stand and still gate
+the remaining Unity render/build work.
 
 **Paused, awaiting your steer:** R-018 (the visuals roadmap + "finished game quality"
 design plans for both projects) is drafted but deliberately not yet implemented — that's
-a large amount of further build work (new menus, audio systems, UI polish, combat
-presentation) and it's worth confirming direction with you before committing more time
-to it, per the three-reviewer sign-off policy above.
+a large amount of further build work and it's worth confirming direction with you
+before committing more time to it.
 
-## Recommended Mac session order
+**Still pending, deferred by you:** Kimi CLI's review (Mac, after 2pm) and Laguna's
+review (Mac, ~2 days out) — R-023 will get a follow-up entry once either comes in.
 
-1. **Open the project first, check the Console for import/compile errors** — several
-   `.asset` and `.cs` files were added or modified outside the Editor this pass
-   (`b1-opens` in the booklet). **R-019 in particular has never been compiled** — if
-   anything is going to fail to build, it's most likely one of the 15 files that fix
-   touched.
-2. R-013 (URP Pipeline Assets) — unblocks R-015 (material pooling).
-3. R-014 (Android Build Profile) — unblocks real device/touch testing.
-4. R-019 — play and confirm enemies/player/portals/checkpoints look and behave
-   unchanged, and that hit-flash/death-burst/dash-afterimage VFX still fade smoothly
-   (the specific behavior this fix's material-caching change touched).
-5. R-021 — confirm the project compiles at all, then confirm each of the 6 sounds
-   actually plays (dash, a melee hit landing on the player, a sword swing, hitting an
-   enemy, leveling up, clearing a wave) and sounds reasonable, not silent or erroring.
-6. R-020 (JS, no Mac needed — already fully verified here, but worth a look): open
-   `manifest-cod-experiment` and confirm the title screen/settings/loadout flow feels
-   right — this is the one row in this pass verified end-to-end without you.
-5. Everything else in this table, top to bottom — the 🔴 items first within each batch.
-6. Work through `TESTING-BOOKLET.html`'s Batch 1 and Batch 2 sections for the
-   fine-grained gameplay-feel checks this register doesn't duplicate.
+---
+
+## JS Testing Track — do this now, no Mac needed
+
+Everything here runs in a regular browser on this machine. Nothing in this track is
+waiting on you to be at your Mac.
+
+**1. Open the game.** From `manifest-cod-experiment/`, run `npm run dev` and open the
+   URL it prints. This is the only setup step.
+
+**2. Title screen → Settings → back.** Click through to Settings, change the graphics
+   quality to something other than what's selected, close Settings, **fully reload the
+   page** (not just close the menu), and reopen Settings — confirm your quality choice
+   is still selected. *(This is R-029's sibling fix, R-028 — was broken before this
+   pass, should now hold.)*
+
+**3. Play a round, get 3+ kills within about 10 seconds of each other.** Listen for the
+   kill-streak voice line — it should play once when the streak starts, not once per
+   kill after that. *(R-029 — only testable once that fix lands; I'll flag when it's
+   ready.)*
+
+**4. Let your health regen back to full, then take a big hit that drops you straight
+   below 25%.** Confirm the low-health warning still plays. *(Also R-029.)* Before this
+   fix, a *fresh* drop below 25% right after a full heal could stay silent.
+
+**5. Get a kill during an intense firefight where AI are also killing each other.**
+   Confirm the "first kill"/streak vox lines only trigger on *your* kills, not every
+   death in the scene. *(R-028 — this was the actual bug: it used to fire off anyone's
+   death.)*
+
+**6. General play.** Nothing else changed visually or in feel this pass — the CSS/dead-
+   code cleanup (R-028) was confirmed invisible (zero-pixel-diff against what was
+   already committed), so if anything *looks* different, that's worth flagging as a
+   new issue, not an expected change.
+
+Nothing above needs a specific test-feedback-log write-up beyond R-029 — jot pass/fail
+there once you've gone through steps 3–4.
+
+---
+
+## Unity Testing Track — Mac session required
+
+Work this list in order — later steps assume earlier ones passed. Each step names the
+register row it verifies.
+
+**1. Open the project. Look at the Console. (R-024, 🔴 do this first, always)**
+   Confirm **zero red compile errors.** This is the step most likely to fail, and if it
+   does, nothing else on this list can be tested — several files were fixed blind this
+   pass (no C# compiler exists on the Linux side to check against), so this is the
+   first real confirmation any of it actually works. If you see red errors, stop and
+   tell me the exact error text.
+
+**2. Checkpoints (R-025).** If your test level has 2+ checkpoints, activate one.
+   Confirm the *other* checkpoints keep their original color — they should not also
+   turn gold/active-colored.
+
+**3. Combat — hit flash (R-026).** Get hit a few times, or land a few hits on an enemy.
+   Confirm the white hit-flash still looks right: brief flash, clean revert, nothing
+   stuck white or flickering oddly.
+
+**4. Listen to all 8 sounds (R-021, R-027).** Dash, get hit, swing your sword, hit an
+   enemy, level up, clear a wave, die once, win a mission once. For the last four
+   (level-up, wave-clear, death, victory) — these were just fixed for audible
+   clicks/pops — listen specifically for any leftover click or pop, and listen closely
+   to whether victory's final held chord sounds clean or distorted.
+
+**5. Combos and missions (R-005, R-006, R-007, R-008).** Play through each weapon's
+   combo (Sword/Bow/Staff/Shield) — timings/feel should be unchanged. Enter both
+   mission portals. Unlock 1-2 skills, save, reload, confirm they're still unlocked.
+
+**6. Desktop controls (R-011) and touch controls if you have a device (R-012).**
+   Confirm desktop controls feel exactly like before. If testing touch: confirm the
+   on-screen buttons actually respond to taps, not just appear.
+
+**7. The two Editor-only blockers, if you have time this session (R-013, R-014).**
+   Create the 4 URP Pipeline Assets (unblocks material-pooling tier work) and the
+   Android Build Profile (unblocks real device/touch testing). These are the only two
+   items left that can *only* happen in the Editor — everything else on this list I
+   could at least attempt blind and now need your eyes on.
+
+**8. Anything else, fine-grained.** `TESTING-BOOKLET.html`'s Batch 1/2 sections have
+   the finer gameplay-feel checks this register doesn't duplicate.
+
+Write results into the Test Feedback Log section above (or just tell me in chat what
+you saw) — pass/fail plus a one-liner on *why* is enough. Anything that fails becomes
+a Next Cycle Backlog item automatically.
