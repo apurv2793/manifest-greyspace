@@ -243,6 +243,46 @@ window and gets cut off mid-decay" (the actual, now-fixed bug). Kimi's proposed 
 would remove that headroom and reintroduce the original click risk. Do not "fix"
 intentional envelope headroom without checking whether it's there on purpose.
 
+## Qwen-only verification sweep (batch 6 of ~9: enemies + polish_vfx + progression_save)
+
+Qwen's self-check produced its highest count yet (15 TRUE across the 3 files). I
+checked the most concrete/consistent ones myself before trusting any of it — all
+false or already-known:
+
+- **4 separate "VFXManager violates material pooling" claims, all FALSE.**
+  `MakeMat()`'s per-instance clone (`new Material(template)` from the
+  `MaterialCache.Get()` template) is deliberate and necessary — each spawned
+  particle independently animates its own fade-out `mat.color`, so sharing one
+  cached instance across particles would be the exact cache-poisoning bug already
+  found and fixed in `Checkpoint.cs` this session. This was already confirmed
+  correct by an earlier independent review this session ("VFXManager's per-instance
+  clone via MakeMat is the right call" — see Fable's findings above). The
+  underlying "no object pooling for spawned VFX primitives" observation is real but
+  not new — it's the already-tracked, deliberately-deferred R-015 item, blocked on
+  URP Pipeline Assets, not a fresh finding.
+- "HitSparks XZ-only vs. DeathBurst/LevelUpBurst full 3D" and "hardcoded per-effect
+  speed/timing, no per-effect randomization" — both FALSE as bugs. Deliberate
+  per-effect visual character choices (ground-plane sparks vs. omnidirectional
+  burst), not defects.
+- "Shield angle check may fail due to rotation misalignment, needs local-space
+  transform" (`ShielderEnemy.cs:71`) — FALSE. Both `transform.forward` and
+  `sourcePos - transform.position` are already world-space vectors in Unity;
+  comparing them directly via `Vector3.Angle` is exactly correct, nothing to
+  transform.
+- "SaveManager missing null checks before iterating `saveData.unlockedSkillNames`/
+  `activeSlotNames`" — real as a fact (no field initializers, so an old/corrupted
+  save could deserialize these as null), but the entire `Load()` body is already
+  wrapped in one try/catch that logs and returns `false` on any exception — a null
+  field fails the load safely rather than crashing. Existing behavior is
+  reasonable, not an urgent gap.
+
+Not independently re-checked this batch (lower-confidence/vaguer claims, or
+"design choice" framing already in Qwen's own verdict): knockback physics
+model, projectile pool-return, SaveData null-MissionId serialization edge case,
+GunEnemy hpBarWidth, and the several NOT-CHECKABLE-STATICALLY items.
+
+Net: every claim independently checked this batch was false or already-known.
+
 ## Qwen-only verification sweep (batch 5 of ~9: combat + content_pipeline)
 
 Per your instruction, Qwen re-checked its own past findings via `qwen-code` CLI
