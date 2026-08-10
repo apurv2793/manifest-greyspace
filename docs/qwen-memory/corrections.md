@@ -165,6 +165,53 @@ finding from ANY reviewer (Qwen included) that was a genuine, confirmed regressi
 rather than a false positive - worth noting that independent cross-review earns its
 keep even at a low hit rate (1 real finding in 10 checked).
 
+## Independent (non-Qwen) reviewer findings — Fable, end-to-end progress review
+
+Second cross-check from a different model family, this one doing a full read-through
+with its own verification (grepping to confirm claims before reporting them, unlike
+nemotron's single-pass review). Notably higher hit rate than any other reviewer this
+session.
+
+**Confirmed real, fixed and committed (`6fe78ed`):**
+- **3 compile blockers** — the project would not have built on the Mac as committed.
+  `Mat()` was deleted from `EnemyBase.cs`/`WeaponBase.cs` in an earlier round but
+  `RangedEnemy.cs`, `ChargerEnemy.cs`, `ShielderEnemy.cs` (never touched by that
+  round) still called it — exactly the "apply the latest round wholesale misses
+  files" failure mode this file already documents above, caught here for real.
+  `MaterialCache.cs` had an unqualified `DestroyImmediate()` in a static class (no
+  `using static UnityEngine.Object`). `AudioManager.cs`'s `GenerateVictory()` had a
+  `const` initialized from `notes.Length * noteDuration`, neither of which is a
+  compile-time constant.
+- **`Checkpoint.cs` cache poisoning** — `Activate()` mutated the *shared*
+  `MaterialCache` entry for `InactiveColor` in place, so one checkpoint activating
+  would recolor every other inactive checkpoint's material too. Fixed to swap to a
+  separate cached material instead of mutating in place.
+- **Hit-flash defeats its own pooling** — `EnemyBase`/`GunEnemy`/`GunCharacter`'s
+  `HitFlash()` coroutines captured/restored via the `.material` getter/setter, which
+  Unity auto-instantiates a per-renderer clone on first access — silently defeats
+  `MaterialCache`'s whole purpose the moment anything takes a hit. Fixed to use
+  `.sharedMaterial` throughout (pooling-safe, doesn't auto-instantiate).
+
+**Confirmed real, NOT yet fixed (audible but non-blocking — logged for a Qwen
+fix pass, not urgent enough to block a Mac session):**
+- Envelope-vs-note-window mismatches cause audible truncation clicks in 4
+  generators: `GenerateDeath` (cuts at ~42% amplitude ×3), `GenerateLevelUp` (~86%
+  ×4), `GenerateWaveClear` (~28% ×4, mild), `GenerateVictory`'s arpeggio (~36% ×7).
+  Independently re-derived the exact cutoff percentages from `Envelope()`'s own
+  attack/decay/sustain/release math — all four match Fable's numbers precisely.
+  Fix: shrink each `Envelope(...)` call so attack+decay+release ≤ the note's gate
+  window.
+- `GenerateVictory`'s held final chord: 7 simultaneous notes at up to 0.7 amplitude
+  each with `sustainLevel=1.0` risks summing well past ±1.0 (theoretical peak ~4.9) —
+  real clipping risk on the payoff moment. Fix: divide by note count or apply
+  headroom scaling.
+
+**Confirmed false / not worth acting on:** none — every concrete claim in this
+review checked out true. (Vague ones like ".meta files should be committed
+Mac-side" and "AudioManager.Play()'s comment about stealing sources is wrong" are
+process notes, not code bugs — the .meta point is Mac-only work, the comment fix is
+cosmetic and skipped.)
+
 ## Subsystems reviewed so far
 
 | Script group | Findings claimed | Findings confirmed real | Notes |
