@@ -212,6 +212,37 @@ Mac-side" and "AudioManager.Play()'s comment about stealing sources is wrong" ar
 process notes, not code bugs — the .meta point is Mac-only work, the comment fix is
 cosmetic and skipped.)
 
+## Independent (non-Qwen) reviewer findings — Kimi, re-run after a stale-clone failure
+
+Kimi's first attempt reviewing this project was discarded entirely — every specific
+claim (e.g. "`MaterialCache.cs` does not exist," "`AudioManager.cs` is a 9-line
+stub") was checked against real source and was false, describing a version of the
+code from before today's fixes. Root cause: it quoted a `Mat()` method verbatim
+that matches this repo's git history from before the compile-blocker fix — almost
+certainly a stale clone, not the live working directory. The re-run added a
+mandatory freshness check (compare `git log -1` hash + canary line counts before
+reviewing anything) and passed — real citations this time.
+
+**Confirmed true, fixed:** `WeaponPickup.cs` still used `FindObjectOfType
+<GunCharacter>()` instead of `GunCharacter.Instance` — a real leftover from the
+R-019 registry migration (that file was outside every generation round's scope,
+same failure class already documented above). While fixing it, also found (myself,
+not from Kimi) that the same file still used the old manual
+`new Material(temp-primitive-clone)` pattern instead of `MaterialCache.Get()` — the
+R-019 *material-pooling* migration missed this file too. Fixed both.
+
+**Confirmed false — this one's worth remembering:** "the 4 audio generators'
+envelopes finish before the note's full time window, leaving the tail silent —
+extend the release time so envelope duration matches the window." This is
+describing the *correct, intended* result of the envelope/gate-mismatch fix earlier
+this session (R-027) — those envelopes were deliberately shrunk to fit *under* the
+gate window *with headroom*, specifically so playback finishes cleanly before
+truncation risk returns. A brief trailing silence after a full natural decay is
+harmless and expected; it is not the same defect class as "envelope exceeds the
+window and gets cut off mid-decay" (the actual, now-fixed bug). Kimi's proposed fix
+would remove that headroom and reintroduce the original click risk. Do not "fix"
+intentional envelope headroom without checking whether it's there on purpose.
+
 ## Subsystems reviewed so far
 
 | Script group | Findings claimed | Findings confirmed real | Notes |
