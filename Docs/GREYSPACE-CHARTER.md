@@ -5,8 +5,7 @@
 > on how it plays — using a loop where the AI runs the game, looks at it, and fixes
 > the weakest thing, again and again.
 
-Status: **draft for approval.** Nothing here is built yet. Decisions marked ❓ need a
-call from Apurv before work starts.
+Status: **draft — 4 of 5 decisions made (see §9), pillars in progress.** Nothing built yet.
 
 ---
 
@@ -59,18 +58,34 @@ Two rules on top of the score, learned the hard way by others:
 
 ---
 
-## 3. Game pillars (❓ confirm or edit)
+## 3. Game pillars — v2 draft, awaiting Apurv's wording edits
 
-Short statements every design and art decision is checked against.
+Built from Apurv's answers (2026-10-07): all four feelings (mastery, survival, mystery,
+power) + exquisite story + different game styles in one game; consequences for actions
+and decisions; acquired vs instinctual traits (all three readings); Mara is not the only
+character — a mix of several playable heroes, a switchable party, and companions/NPCs
+whose fates depend on choices; choices branch the story AND characters' traits change
+how each part plays.
 
-1. **Every hit lands.** Combat feel first: hit-stop, knockback, enemy wind-ups you
-   can read, dodge with invulnerability frames, combo windows that feel fair.
-2. **Grey world, sharp light.** A desaturated "greyspace" where light, sparks and
-   magic carry all the colour. Readable at a glance from the isometric camera.
-3. **Readable silhouettes.** You can tell every enemy type, every attack and the
-   player apart in one second, even in a crowd.
-4. **Small but finished.** A hub and a handful of missions that feel like a shipped
-   game — menus, sound, save, onboarding — beat a large rough world.
+1. **Every choice leaves a mark.** What you decide and do changes the story, the world
+   and the people in it — and you get to see the result.
+2. **Who you are is how you fight.** Each character plays through three layers:
+   **instinct** (inborn, takes over under pressure, not fully in your control),
+   **discipline** (learned and chosen — skill tree, training), and **habit** (shaped by
+   how you keep playing). All of it rests on the player's own skill.
+3. **Many hands, one story.** Several playable heroes, companions and strangers whose
+   fates hang on your choices, telling one rich story together.
+4. **Every chapter feels different; every hit lands.** Mastery, dread, mystery and raw
+   power each get their moments — all on one shared combat core that feels great in
+   every style.
+
+Art rule (moved to the art bible, no longer a pillar): **grey world, sharp light** —
+desaturated world; light, sparks and magic carry the colour.
+
+Scope discipline (a production rule, not a pillar): prove each idea small and perfect
+before widening — first one perfect fight, then one short story chapter (two playable
+characters, one real choice with a visible consequence, an instinct moment, two styles),
+then expand.
 
 ---
 
@@ -90,8 +105,8 @@ gets eyes and hands in Unity.
 - ⚠️ **ToS note.** Unity's terms (17.2(ff)) ban AI agents and CLIs touching Unity
   unless via "Authorized Agentic Access", which they don't define on the page. Unity's
   own launch post for the CLI names Claude as supported and calls it free. That's the
-  strongest position available — third-party bridges have none. ❓ Apurv to accept
-  this, or ask Unity for written confirmation first.
+  strongest position available — third-party bridges have none. ✅ **Decided
+  2026-10-07: use the official Unity CLI route only.**
 
 ### 4.2 Built-in test hooks in the game
 A `GreyspaceDebug` command set the AI can call: jump to any mission, spawn an enemy,
@@ -115,13 +130,37 @@ combat, not just look at it.)
 Memory between sessions lives in `DESIGN.md`, `PROGRESS.md` and an honest `NOTES.md`
 (what's weak, what was measured).
 
-### 4.4 Who does what (models)
-| Role | Model | Why |
+### 4.4 Who does what (models) — DECIDED: local models build, Opus directs
+
+Goal: Opus-level quality, with most of the actual writing done by local models
+(free to run, private, on our own hardware).
+
+| Role | Model | Where |
 |---|---|---|
-| Director, architect, blind critic, hard coupled systems (combat, camera, lighting) | **Opus 5.5** | Best at long solo runs and judgement; costly, so used where it matters |
-| Bounded implementation tasks | **Sonnet 5.5** | Cheaper, fast, good inside a clear brief |
-| Small self-contained scripts (pickups, UI widgets, data classes) | **GLM 5.1 via Manifest OS** | Proven 0.92 on our own tests; routed through compare → feedback |
-| Script authoring on the Linux box (419c) | Linux Claude | Can't run Unity (no ARM build) — writes and pushes code, Mac verifies |
+| Director: briefs, architecture, review of every result, blind critic, final call | **Opus 5.5** | Claude Code on the Mac |
+| Builder: writes the code and Blender scripts to Opus's brief | **Local models** via Ollama — Qwen3-Coder-Next (Mac, M5 Max 128 GB) and qwen3-koinon (419c, GB10) | Mac + 419c |
+| Second-opinion builder when local is stuck | GLM 5.1 via Manifest OS (cloud, proven 0.92 on our tests) | Manifest OS |
+| Last resort | Opus writes it directly | Mac |
+
+How Opus gets Opus-level output from smaller models:
+1. **Small, checkable pieces.** Opus breaks each feature into tasks a local model can
+   finish in one go, each with a written acceptance check (compiles, test passes,
+   screenshot criterion).
+2. **Tight briefs.** Exact file, exact class shape, our hard rules, an example of the
+   house style — the less the local model has to guess, the better it does.
+3. **Review every result.** Opus reads every diff and runs the See-Play-Fix loop;
+   rejected work goes back with specific fixes, not "try again".
+4. **Escalation rule.** After 3 failed rounds on one task, it moves up a tier
+   (local → GLM → Opus). Coupled systems (combat feel, camera, lighting) start with
+   Opus designing the structure; local models fill in the parts.
+5. **Measure it.** Every task logs: which model, rounds needed, passed or escalated —
+   into Manifest OS RouterMemory, so we learn which local model is good at what.
+
+Phase 0 includes a **local model bake-off**: fix the Ollama 404, run 3 real Greyspace
+tasks through each local model under Opus direction, and set the default from data.
+
+Script authoring on 419c: Linux Claude can't run Unity (no ARM build) — it writes and
+pushes code; the Mac verifies.
 
 Parallel AI workers only *after* a written contract with file ownership (the Turbo
 Kart / Claude-of-Duty lesson). Combat, camera and lighting are one coupled system —
@@ -129,7 +168,7 @@ one owner at a time.
 
 ---
 
-## 5. Art direction & asset pipeline (❓ biggest decision)
+## 5. Art direction & asset pipeline — DECIDED: Manifest 3D + Blender
 
 Primitives alone cap Greyspace around visuals 5–6. Options:
 
@@ -140,8 +179,8 @@ Primitives alone cap Greyspace around visuals 5–6. Options:
 | **C. Manifest's own 3D pipeline** *(recommended)* | Use what Manifest already has: SDXL concept art, TripoSR / SF3D / Hunyuan3D 3D generation, the frozen **Mara** base body already rigged in Unity, Mixamo-style animation | Solves characters — the exact weak spot of every competitor. Assets we own | Needs a consistent art bible so generated pieces match; some cleanup |
 | **D. Bought/free asset packs** | Kenney, Quaternius, etc. | Fastest | Generic look; loses the "made by our system" story |
 
-**Recommendation: C for characters and hero props, B for environment kit pieces,
-A's lighting/shader work on top of everything.**
+✅ **Decided 2026-10-07: C for characters and hero props (starting from Mara), B for
+environment kit pieces, A's lighting/shader work on top of everything.**
 
 Art bible to write first: palette (grey base + accent colours that mean something),
 shape language per faction, silhouette rules, lighting moods per mission, VFX style.
@@ -227,15 +266,17 @@ Full rigor only for combat, camera and lighting. Everything else stays light.
 
 ---
 
-## 9. Decisions needed from Apurv (❓)
+## 9. Decisions
 
-1. **Accept the official Unity CLI route** under the current ToS wording, or ask Unity first?
-2. **Art route:** recommended C (Manifest 3D pipeline + Mara) + B (Blender-scripted kit) + lighting.
-3. **Pillars:** keep the four above, or edit?
-4. **Camera:** test orthographic vs narrow perspective in the slice — OK?
-5. **Spend:** comfortable with long Opus 5.5 runs for the slice (likely several sessions)?
+| # | Decision | Status |
+|---|---|---|
+| 1 | Unity access route | ✅ Official Unity CLI only |
+| 2 | Art route | ✅ Manifest 3D pipeline (characters, Mara first) + Blender-scripted environment kit + lighting/shaders |
+| 3 | Pillars | 🟡 v2 drafted, awaiting Apurv's wording edits |
+| 4 | Camera | Test orthographic vs narrow perspective in Phase 1, pick by screenshot |
+| 5 | Model spend | ✅ Local models build, Opus directs and reviews; escalate after 3 failed rounds |
 
-Once these are answered, Phase 0 gets a step-by-step implementation plan.
+Once pillars are settled, Phase 0 gets a step-by-step implementation plan.
 
 ---
 
