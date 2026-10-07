@@ -1313,13 +1313,19 @@ ollama run qwen3-coder:30b "Reply with exactly: OK"
 ```
 Expected: `OK`. If the tag doesn't exist, run `ollama search qwen3-coder` (or check ollama.com/library) and pick the largest coder tag that fits in memory; record the tag in `Docs/TOOLING.md`.
 
-- [ ] **Step 2: 419c — tunnel instead of exposing Ollama to the network**
+- [ ] **Step 2: 419c — pull Laguna S 2.1 and open a tunnel (don't expose Ollama to the network)**
+
+Do NOT use `qwen3-koinon-t1` anywhere in this bake-off: it is YUGA·SOL's MANAS T1 BUY/SELL/HOLD classifier (fixed system prompt, `num_predict 32`) and lives only on the Mac. 419c is an NVIDIA GB10 with 121 GB unified memory (CPU and GPU share it).
 
 ```bash
+ssh 419c "ollama pull laguna-s-2.1:nvfp4 || ollama pull laguna-s-2.1:q4_k_m"   # ~68 GB; nvfp4 suits the GB10 (Blackwell) — fall back to q4_k_m if nvfp4 won't load
+ssh 419c "ollama run laguna-s-2.1:nvfp4 'Reply with exactly: OK' || ollama run laguna-s-2.1:q4_k_m 'Reply with exactly: OK'"
 ssh -f -N -L 11435:localhost:11434 419c
 curl -s http://localhost:11435/api/tags | python3 -c "import json,sys;print([m['name'] for m in json.load(sys.stdin)['models']])"
 ```
-Expected: list includes `qwen3-koinon-t1:latest`.
+Expected: `OK`, then a list including `qwen3.8-fixed:27b`, `nemotron-3.5-lightning:30b`, `ornith-1.5:35b` and the Laguna tag that loaded. Record that exact Laguna tag in `Docs/TOOLING.md` and use it in Task E2's `MODELS`.
+
+Memory note: run one 419c contestant at a time (Laguna S alone is ~68 GB); the harness calls models sequentially, so this holds as long as nothing else heavy is loaded on 419c.
 
 - [ ] **Step 3: Fix the Manifest OS router slot** — in `/Users/apurv2793/Manifest main/manifest/core/manas/nim_router.py`, the `UNITY_CODE` Ollama slot names `qwen3-coder-next:q4_K_M`; change it to the tag installed in Step 1. Commit in the `manifest` repo: `fix(router): point unity_code Ollama slot at installed coder model`.
 
@@ -1345,7 +1351,10 @@ HERE = Path(__file__).parent
 MODELS = {
     "mac-qwen3-coder":   ("http://localhost:11434", "qwen3-coder:30b"),
     "mac-qwen3-30b":     ("http://localhost:11434", "qwen3:30b-a3b-q4_K_M"),
-    "419c-koinon":       ("http://localhost:11435", "qwen3-koinon-t1:latest"),
+    "419c-qwen3.8-fixed": ("http://localhost:11435", "qwen3.8-fixed:27b"),
+    "419c-nemotron-3.5":  ("http://localhost:11435", "nemotron-3.5-lightning:30b"),
+    "419c-ornith-1.5":    ("http://localhost:11435", "ornith-1.5:35b"),
+    "419c-laguna-s-2.1":  ("http://localhost:11435", "laguna-s-2.1:nvfp4"),   # use the tag that loaded in E1 Step 2
 }
 SYSTEM = (HERE / "briefs" / "_house_rules.md").read_text()
 
@@ -1447,7 +1456,7 @@ runs/
 
 **Files:** Create `Docs/BAKEOFF-RESULTS.md`; Modify `Docs/GREYSPACE-CHARTER.md` §4.4
 
-- [ ] **Step 1: Run** — `python3 Tools/bakeoff/bakeoff.py` (expect 9 records; reasoning models can take minutes each).
+- [ ] **Step 1: Run** — `python3 Tools/bakeoff/bakeoff.py` (6 models × 3 briefs = expect 18 records; reasoning models and Laguna S can take minutes each).
 
 - [ ] **Step 2: Compile gate per output** — for each `.cs`, copy into `Assets/Scripts/_Bakeoff/` one at a time, `unity command recompile` (name per `Docs/tooling/unity-commands.json`), `unity command console --tail 50 --level error`, record pass/fail, delete the file. For brief 03 compile it as a replacement of `ChargerEnemy.cs` on a throwaway branch (`git switch -c bakeoff-tmp`), then `git switch - && git branch -D bakeoff-tmp`.
 

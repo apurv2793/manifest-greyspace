@@ -138,7 +138,7 @@ Goal: Opus-level quality, with most of the actual writing done by local models
 | Role | Model | Where |
 |---|---|---|
 | Director: briefs, architecture, review of every result, blind critic, final call | **Opus 5.5** | Claude Code on the Mac |
-| Builder: writes the code and Blender scripts to Opus's brief | **Local models** via Ollama — Qwen3-Coder-Next (Mac, M5 Max 128 GB) and qwen3-koinon (419c, GB10) | Mac + 419c |
+| Builder: writes the code and Blender scripts to Opus's brief | **Local models** via Ollama — a Qwen3 coder model (Mac, M5 Max 128 GB) and qwen3.8-fixed:27b / nemotron-3.5-lightning:30b / ornith-1.5:35b / Laguna S 2.1 (419c, GB10, 121 GB unified) — winner picked by the bake-off. NOT qwen3-koinon-t1 (that is YUGA·SOL's BUY/SELL/HOLD signal classifier, not a coder) | Mac + 419c |
 | Second-opinion builder when local is stuck | GLM 5.1 via Manifest OS (cloud, proven 0.92 on our tests) | Manifest OS |
 | Last resort | Opus writes it directly | Mac |
 
