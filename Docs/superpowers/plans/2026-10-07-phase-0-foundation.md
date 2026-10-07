@@ -2,6 +2,21 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> ⚠️ **RECONCILE BEFORE EXECUTING (added 2026-10-07).** This plan was written against the
+> local checkout *before* 33 upstream commits (Aug 7–10) were merged. Known drift:
+> - **Workstream B2/B3 (GameInput) is superseded.** Upstream already has `Assets/Scripts/InputRouter.cs`
+>   with action signals (`SignalLight/Heavy/Dash/Swap/Interact/Special/Retry`) and `TouchMoveAxis`.
+>   Drive the ComboBot (D3) through `InputRouter` instead; drop `GameInputState`/`GameInput`.
+> - **Line numbers for `GreyspaceScene.cs` are stale** (now 610 lines). Re-map methods before Workstream C.
+> - **Upstream added** `MaterialCache` (use instead of per-call shader-steal), `GunCharacter.Instance`
+>   (use instead of `FindObjectOfType<GunCharacter>()`), real procedural `AudioManager`, an F special
+>   attack, `Assets/Content/*.asset` library, and `Docs/DELIVERY-REVIEW-REGISTER.md`.
+> - Still valid: Workstream A (Unity CLI bridge), C (split — re-mapped), D1/D2 (debug commands),
+>   E (bake-off: Laguna S 2.1 + 3 x 419c models), F (docs), X (exit check). No tests/asmdefs exist
+>   upstream yet, so B1 still applies.
+> - **Model orchestration for the build is owned by NexusHub** (owner decision 2026-10-07) — route
+>   task dispatch, model selection and the bake-off through NexusHub, not Manifest OS compare.
+
 **Goal:** Give the AI eyes and hands in Unity (official Unity CLI), make the game self-testable (input simulation, debug commands, autopilot bot), clean up the oversized scene file, pick the best local model by measurement, and write the design documents every later phase is judged against.
 
 **Architecture:** Official Unity CLI + MCP drives the open Editor (play, screenshot, console, tests, `eval`). Inside the game, a thin `GameInput` wrapper merges real input with a simulated layer, `GreyspaceDebug` exposes static commands the CLI calls through `eval`, and a `ComboBot` plays missions unattended. `GreyspaceScene.cs` (589 lines) is split into focused plain-C# parts owned by a slim scene controller. A stdlib-only Python harness runs a local-model bake-off under Opus review.
