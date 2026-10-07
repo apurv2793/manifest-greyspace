@@ -1304,16 +1304,7 @@ Note: `ReleaseMove()` then `Press()` in the same frame re-sends a "down" each fr
 
 ### Task E1: Get the local models reachable
 
-- [ ] **Step 1: Mac — install a coding model (the router's `qwen3-coder-next:q4_K_M` was never pulled; that was the "Ollama 404")**
-
-```bash
-ollama list
-ollama pull qwen3-coder:30b
-ollama run qwen3-coder:30b "Reply with exactly: OK" 
-```
-Expected: `OK`. If the tag doesn't exist, run `ollama search qwen3-coder` (or check ollama.com/library) and pick the largest coder tag that fits in memory; record the tag in `Docs/TOOLING.md`.
-
-- [ ] **Step 2: 419c — open a tunnel (don't expose Ollama to the network)**
+- [ ] **Step 1: 419c — open a tunnel (don't expose Ollama to the network)**
 
 Do NOT use `qwen3-koinon-t1` anywhere in this bake-off: it is YUGA·SOL's MANAS T1 BUY/SELL/HOLD classifier (fixed system prompt, `num_predict 32`) and lives only on the Mac. 419c is an NVIDIA GB10 with 121 GB unified memory (CPU and GPU share it).
 
@@ -1323,7 +1314,7 @@ curl -s http://localhost:11435/api/tags | python3 -c "import json,sys;print([m['
 ```
 Expected: list includes `qwen3.8-fixed:27b`, `nemotron-3.5-lightning:30b`, `ornith-1.5:35b`.
 
-- [ ] **Step 2b: Mac — Laguna S 2.1 via LM Studio**
+- [ ] **Step 2: Mac — Laguna S 2.1 via LM Studio**
 
 Laguna S 2.1 (Poolside, 71 GB) is already downloaded and loaded in LM Studio on the Mac; LM Studio serves an OpenAI-compatible API on port 1234.
 
@@ -1334,9 +1325,9 @@ curl -s http://localhost:1234/v1/models | python3 -c "import json,sys;print([m['
 ```
 Expected: `poolside/laguna-s-2.1` in the list. If not loaded: `~/.lmstudio/bin/lms load poolside/laguna-s-2.1`; if the server is down: `~/.lmstudio/bin/lms server start`.
 
-Memory note (Mac, 128 GB): Laguna S takes ~71 GB loaded. Before running the Mac Ollama contestants, unload it (`~/.lmstudio/bin/lms unload poolside/laguna-s-2.1`) or run Laguna last; the harness calls models one at a time.
+Memory note (Mac, 128 GB): Laguna S takes ~71 GB while loaded; it is the only Mac contestant, so nothing else needs unloading. The harness calls models one at a time.
 
-- [ ] **Step 3: Fix the Manifest OS router slot** — in `/Users/apurv2793/Manifest main/manifest/core/manas/nim_router.py`, the `UNITY_CODE` Ollama slot names `qwen3-coder-next:q4_K_M`; change it to the tag installed in Step 1. Commit in the `manifest` repo: `fix(router): point unity_code Ollama slot at installed coder model`.
+- [ ] **Step 3: Remove the dead router slot** — in `/Users/apurv2793/Manifest main/manifest/core/manas/nim_router.py`, the `UNITY_CODE` list has an Ollama slot naming `qwen3-coder-next:q4_K_M`, a model that was never pulled (the old "Ollama 404"). Qwen3 coder models are out of the bake-off (owner decision 2026-10-07), so delete that one `ModelSlot(Provider.OLLAMA, "qwen3-coder-next:q4_K_M", ...)` line. Local builders are reached through the bake-off harness until a winner is chosen; wiring the winner into the router is Task E3 Step 5. Commit in the `manifest` repo: `fix(router): remove never-installed qwen3-coder-next slot from unity_code`.
 
 ### Task E2: Bake-off harness and briefs
 
@@ -1359,8 +1350,6 @@ from pathlib import Path
 HERE = Path(__file__).parent
 # name -> (api, base_url, model). api: "ollama" = native /api/chat, "openai" = /v1/chat/completions (LM Studio)
 MODELS = {
-    "mac-qwen3-coder":    ("ollama", "http://localhost:11434", "qwen3-coder:30b"),
-    "mac-qwen3-30b":      ("ollama", "http://localhost:11434", "qwen3:30b-a3b-q4_K_M"),
     "mac-laguna-s-2.1":   ("openai", "http://localhost:1234",  "poolside/laguna-s-2.1"),
     "419c-qwen3.8-fixed": ("ollama", "http://localhost:11435", "qwen3.8-fixed:27b"),
     "419c-nemotron-3.5":  ("ollama", "http://localhost:11435", "nemotron-3.5-lightning:30b"),
@@ -1475,7 +1464,7 @@ runs/
 
 **Files:** Create `Docs/BAKEOFF-RESULTS.md`; Modify `Docs/GREYSPACE-CHARTER.md` §4.4
 
-- [ ] **Step 1: Run** — `python3 Tools/bakeoff/bakeoff.py` (6 models × 3 briefs = expect 18 records; reasoning models and Laguna S can take minutes each).
+- [ ] **Step 1: Run** — `python3 Tools/bakeoff/bakeoff.py` (4 models × 3 briefs = expect 12 records; reasoning models and Laguna S can take minutes each).
 
 - [ ] **Step 2: Compile gate per output** — for each `.cs`, copy into `Assets/Scripts/_Bakeoff/` one at a time, `unity command recompile` (name per `Docs/tooling/unity-commands.json`), `unity command console --tail 50 --level error`, record pass/fail, delete the file. For brief 03 compile it as a replacement of `ChargerEnemy.cs` on a throwaway branch (`git switch -c bakeoff-tmp`), then `git switch - && git branch -D bakeoff-tmp`.
 
@@ -1491,7 +1480,7 @@ runs/
 
 - [ ] **Step 4: Write `Docs/BAKEOFF-RESULTS.md`** — table model × brief with score, rounds, seconds; verdict per model ("default builder", "logic-only", "don't use"); escalation observations.
 
-- [ ] **Step 5: Update charter §4.4** with the chosen default builder per task type and commit both docs: `docs: local-model bake-off results; set default builders`.
+- [ ] **Step 5: Update charter §4.4** with the chosen default builder per task type and commit both docs: `docs: local-model bake-off results; set default builders`. If the winner should also be reachable through Manifest OS, add it as a `UNITY_CODE` slot in `nim_router.py` (Laguna via LM Studio needs an OpenAI-compatible provider entry pointing at `http://localhost:1234/v1`).
 
 ---
 
