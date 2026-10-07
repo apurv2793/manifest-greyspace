@@ -1313,19 +1313,28 @@ ollama run qwen3-coder:30b "Reply with exactly: OK"
 ```
 Expected: `OK`. If the tag doesn't exist, run `ollama search qwen3-coder` (or check ollama.com/library) and pick the largest coder tag that fits in memory; record the tag in `Docs/TOOLING.md`.
 
-- [ ] **Step 2: 419c — pull Laguna S 2.1 and open a tunnel (don't expose Ollama to the network)**
+- [ ] **Step 2: 419c — open a tunnel (don't expose Ollama to the network)**
 
 Do NOT use `qwen3-koinon-t1` anywhere in this bake-off: it is YUGA·SOL's MANAS T1 BUY/SELL/HOLD classifier (fixed system prompt, `num_predict 32`) and lives only on the Mac. 419c is an NVIDIA GB10 with 121 GB unified memory (CPU and GPU share it).
 
 ```bash
-ssh 419c "ollama pull laguna-s-2.1:nvfp4 || ollama pull laguna-s-2.1:q4_k_m"   # ~68 GB; nvfp4 suits the GB10 (Blackwell) — fall back to q4_k_m if nvfp4 won't load
-ssh 419c "ollama run laguna-s-2.1:nvfp4 'Reply with exactly: OK' || ollama run laguna-s-2.1:q4_k_m 'Reply with exactly: OK'"
 ssh -f -N -L 11435:localhost:11434 419c
 curl -s http://localhost:11435/api/tags | python3 -c "import json,sys;print([m['name'] for m in json.load(sys.stdin)['models']])"
 ```
-Expected: `OK`, then a list including `qwen3.8-fixed:27b`, `nemotron-3.5-lightning:30b`, `ornith-1.5:35b` and the Laguna tag that loaded. Record that exact Laguna tag in `Docs/TOOLING.md` and use it in Task E2's `MODELS`.
+Expected: list includes `qwen3.8-fixed:27b`, `nemotron-3.5-lightning:30b`, `ornith-1.5:35b`.
 
-Memory note: run one 419c contestant at a time (Laguna S alone is ~68 GB); the harness calls models sequentially, so this holds as long as nothing else heavy is loaded on 419c.
+- [ ] **Step 2b: Mac — Laguna S 2.1 via LM Studio**
+
+Laguna S 2.1 (Poolside, 71 GB) is already downloaded and loaded in LM Studio on the Mac; LM Studio serves an OpenAI-compatible API on port 1234.
+
+```bash
+~/.lmstudio/bin/lms server status            # expect: running on port 1234
+~/.lmstudio/bin/lms ls | grep -i laguna       # expect: poolside/laguna-s-2.1 ... LOADED
+curl -s http://localhost:1234/v1/models | python3 -c "import json,sys;print([m['id'] for m in json.load(sys.stdin)['data']])"
+```
+Expected: `poolside/laguna-s-2.1` in the list. If not loaded: `~/.lmstudio/bin/lms load poolside/laguna-s-2.1`; if the server is down: `~/.lmstudio/bin/lms server start`.
+
+Memory note (Mac, 128 GB): Laguna S takes ~71 GB loaded. Before running the Mac Ollama contestants, unload it (`~/.lmstudio/bin/lms unload poolside/laguna-s-2.1`) or run Laguna last; the harness calls models one at a time.
 
 - [ ] **Step 3: Fix the Manifest OS router slot** — in `/Users/apurv2793/Manifest main/manifest/core/manas/nim_router.py`, the `UNITY_CODE` Ollama slot names `qwen3-coder-next:q4_K_M`; change it to the tag installed in Step 1. Commit in the `manifest` repo: `fix(router): point unity_code Ollama slot at installed coder model`.
 
@@ -1348,27 +1357,37 @@ from datetime import datetime
 from pathlib import Path
 
 HERE = Path(__file__).parent
+# name -> (api, base_url, model). api: "ollama" = native /api/chat, "openai" = /v1/chat/completions (LM Studio)
 MODELS = {
-    "mac-qwen3-coder":   ("http://localhost:11434", "qwen3-coder:30b"),
-    "mac-qwen3-30b":     ("http://localhost:11434", "qwen3:30b-a3b-q4_K_M"),
-    "419c-qwen3.8-fixed": ("http://localhost:11435", "qwen3.8-fixed:27b"),
-    "419c-nemotron-3.5":  ("http://localhost:11435", "nemotron-3.5-lightning:30b"),
-    "419c-ornith-1.5":    ("http://localhost:11435", "ornith-1.5:35b"),
-    "419c-laguna-s-2.1":  ("http://localhost:11435", "laguna-s-2.1:nvfp4"),   # use the tag that loaded in E1 Step 2
+    "mac-qwen3-coder":    ("ollama", "http://localhost:11434", "qwen3-coder:30b"),
+    "mac-qwen3-30b":      ("ollama", "http://localhost:11434", "qwen3:30b-a3b-q4_K_M"),
+    "mac-laguna-s-2.1":   ("openai", "http://localhost:1234",  "poolside/laguna-s-2.1"),
+    "419c-qwen3.8-fixed": ("ollama", "http://localhost:11435", "qwen3.8-fixed:27b"),
+    "419c-nemotron-3.5":  ("ollama", "http://localhost:11435", "nemotron-3.5-lightning:30b"),
+    "419c-ornith-1.5":    ("ollama", "http://localhost:11435", "ornith-1.5:35b"),
 }
 SYSTEM = (HERE / "briefs" / "_house_rules.md").read_text()
 
-def call(base, model, prompt, timeout=900):
-    body = json.dumps({
-        "model": model, "stream": False,
-        "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}],
-        "options": {"num_predict": 12000, "num_ctx": 32768, "temperature": 0.2},
-    }).encode()
-    req = urllib.request.Request(base + "/api/chat", data=body, headers={"Content-Type": "application/json"})
+def call(api, base, model, prompt, timeout=1800):
+    msgs = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}]
+    if api == "ollama":
+        url, payload = base + "/api/chat", {
+            "model": model, "stream": False, "messages": msgs,
+            "options": {"num_predict": 12000, "num_ctx": 32768, "temperature": 0.2}}
+    else:  # openai-compatible (LM Studio)
+        url, payload = base + "/v1/chat/completions", {
+            "model": model, "stream": False, "messages": msgs,
+            "max_tokens": 12000, "temperature": 0.2}
+    req = urllib.request.Request(url, data=json.dumps(payload).encode(),
+                                 headers={"Content-Type": "application/json"})
     t0 = time.time()
     with urllib.request.urlopen(req, timeout=timeout) as r:
         d = json.load(r)
-    return d["message"].get("content", ""), d.get("done_reason", ""), time.time() - t0
+    secs = time.time() - t0
+    if api == "ollama":
+        return d["message"].get("content", ""), d.get("done_reason", ""), secs
+    ch = d["choices"][0]
+    return ch["message"].get("content", ""), ch.get("finish_reason", ""), secs
 
 def extract_cs(text):
     m = re.findall(r"```(?:csharp|cs)?\s*\n(.*?)```", text, re.S)
@@ -1385,10 +1404,10 @@ def main():
     out.mkdir(parents=True)
     with open(out / "results.jsonl", "w") as log:
         for name in a.models.split(","):
-            base, model = MODELS[name]
+            api, base, model = MODELS[name]
             for b in briefs:
                 try:
-                    text, reason, secs = call(base, model, b.read_text())
+                    text, reason, secs = call(api, base, model, b.read_text())
                     code = extract_cs(text)
                     d = out / name; d.mkdir(exist_ok=True)
                     (d / (b.stem + ".cs")).write_text(code)
