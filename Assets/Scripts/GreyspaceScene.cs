@@ -24,6 +24,49 @@ public class GreyspaceScene : MonoBehaviour
     bool playerDead, missionComplete;
     MissionDefinition currentMission;
 
+    // ── Debug hooks (GreyspaceDebug / Unity CLI eval) ─────────────────────────
+    public static GreyspaceScene Instance { get; private set; }
+    void Awake() { Instance = this; }
+    void OnDestroy() { if (Instance == this) Instance = null; }
+
+    public GreyspaceSnapshot Snapshot()
+    {
+        return new GreyspaceSnapshot
+        {
+            mode            = mode.ToString(),
+            missionId       = currentMission != null ? currentMission.missionId : "",
+            wave            = wave,
+            totalWaves      = totalWaves,
+            playerDead      = playerDead,
+            missionComplete = missionComplete,
+            playerHp        = player != null ? player.health : 0,
+            playerMaxHp     = player != null ? player.maxHealth : 0,
+            playerPos       = playerGO != null ? playerGO.transform.position : Vector3.zero,
+            level           = SceneState.level,
+            xp              = SceneState.xp,
+            skillPoints     = player != null ? player.inventory.skillTree.skillPoints : 0,
+            enemiesAlive    = EnemyBase.Active.Count + GunEnemy.Active.Count,
+            frame           = Time.frameCount,
+            fps             = Time.unscaledDeltaTime > 0f ? 1f / Time.unscaledDeltaTime : 0f,
+        };
+    }
+
+    public void DebugGoHub() => EnterHub();
+
+    // Content library first, then whatever the hub portals currently hold.
+    public bool DebugGoMission(string missionId)
+    {
+        MissionDefinition def = ContentLibrary.Mission(missionId);
+        if (def == null)
+            foreach (var mp in portals)
+                if (mp != null && mp.mission != null && mp.mission.missionId == missionId) { def = mp.mission; break; }
+        if (def == null) return false;
+        EnterMission(def);
+        return true;
+    }
+
+    public GameObject DebugPlayerGO => playerGO;
+
     // =========================================================================
     void OnEnable()  => GameEvents.OnEnemyDied += OnEnemyKilled;
     void OnDisable() => GameEvents.OnEnemyDied -= OnEnemyKilled;

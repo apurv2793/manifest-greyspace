@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> ⛔ **SUPERSEDED by `2026-10-09-phase-0-foundation-v2.md`** — use v2 for status and changed tasks; this file is kept for step detail v2 points back to.
+>
 > ⚠️ **RECONCILE BEFORE EXECUTING (added 2026-10-07).** This plan was written against the
 > local checkout *before* 33 upstream commits (Aug 7–10) were merged. Known drift:
 > - **Workstream B2/B3 (GameInput) is superseded.** Upstream already has `Assets/Scripts/InputRouter.cs`

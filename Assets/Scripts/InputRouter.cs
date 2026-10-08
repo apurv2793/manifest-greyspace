@@ -20,8 +20,14 @@ public static class InputRouter
     // needed since it's a held/continuous value like a real analog stick).
     public static Vector2 TouchMoveAxis;
 
+    // Bot / AI-test override (ComboBot, GreyspaceDebug). Null = normal behaviour.
+    // Gameplay code never sets these; with both null, desktop and touch are unchanged.
+    public static Vector2? SimMoveAxis;
+    public static Vector3? SimAimPoint;
+
     public static Vector2 MoveAxis()
     {
+        if (SimMoveAxis.HasValue) return SimMoveAxis.Value;
         if (IsTouch) return TouchMoveAxis;
         float h = 0, v = 0;
         if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) h += 1;
@@ -61,6 +67,7 @@ public static class InputRouter
     // already does when the mouse ray doesn't move the aim point enough.
     public static bool TryAimWorldPoint(Camera cam, Vector3 planeOrigin, out Vector3 point)
     {
+        if (SimAimPoint.HasValue) { point = SimAimPoint.Value; return true; }
         if (!IsTouch && cam != null)
         {
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);

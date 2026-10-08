@@ -17,6 +17,7 @@ public class GunCharacter : MonoBehaviour
     // State (read by GreyspaceScene)
     [HideInInspector] public int health;
     [HideInInspector] public bool isDead;
+    [HideInInspector] public bool debugGodMode;   // GreyspaceDebug.SetGodMode — ignores all damage
     [HideInInspector] public GreyspaceScene scene;
 
     // Set by GreyspaceScene after HUD is built
@@ -324,7 +325,7 @@ public class GunCharacter : MonoBehaviour
 
     public void TakeDamage(int dmg, Vector3 sourcePos = default, float force = 0f)
     {
-        if (isDead || invincible) return;
+        if (isDead || invincible || debugGodMode) return;
         health -= dmg;
         Debug.Log("Player HP: " + health + "/" + maxHealth);
         DamageNumber.Spawn(transform.position + Vector3.up * 2f, dmg, new Color(0.95f, 0.2f, 0.2f));
