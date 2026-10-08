@@ -121,6 +121,8 @@ In-game debug commands (`Assets/Scripts/Debug/GreyspaceDebug.cs`), callable via 
   not the `~/greyspace` symlink — e.g. `capture_game_view --save_path` rejects symlinked paths as "outside the project root".
 - **Charger / Ranged enemies have no stat defaults** (health 0). Mission assets set them; anything
   spawning them in code must set `health`, `speed`, `attackDamage`, `xpValue`.
+- **`SkillNode.CanUnlock` throws on a fresh asset** — `prerequisites` is null until set in the Inspector. Open bug
+  (exam brief v2-06 targets it; reference fix in NexusHub `exams/incoming/greyspace.unity_code.v2.reference/`).
 - **ShielderEnemy hides `EnemyBase.Start()`** with its own `Start()`, so Shielders get no HP bar. Open bug.
 - **`GreyspaceScene.ClearEnemies()` skips `EnemyBase.Active`**, so Charger/Ranged/Shielder survive a mission replay. Open bug (fixed by plan v2 Workstream C).
 - **Models over-trust plausible code.** Static checks passed code that did not compile. The

@@ -8,6 +8,14 @@ public static class GreyspaceDebug
     static GreyspaceScene S => GreyspaceScene.Instance;
     const string NotPlaying = "not playing";
 
+    // Scratch values that survive between separate `eval` calls — behaviour checks
+    // store a "before" reading in one step and compare in a later one.
+    public static readonly System.Collections.Generic.Dictionary<string, float> Scratch =
+        new System.Collections.Generic.Dictionary<string, float>();
+
+    public static float PlayerHp() => GunCharacter.Instance != null ? GunCharacter.Instance.health : -1f;
+    public static Vector3 PlayerPos() => GunCharacter.Instance != null ? GunCharacter.Instance.transform.position : Vector3.zero;
+
     // ── State + navigation ───────────────────────────────────────────────────
     public static string State()
         => S == null ? "{\"error\":\"" + NotPlaying + "\"}" : JsonUtility.ToJson(S.Snapshot());
