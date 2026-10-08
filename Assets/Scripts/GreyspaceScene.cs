@@ -591,6 +591,8 @@ public class GreyspaceScene : MonoBehaviour
         Camera cam = Camera.main;
         if (cam == null) cam = new GameObject("MainCamera").AddComponent<Camera>();
         cam.tag = "MainCamera";
+        // Without a listener nothing AudioManager plays is heard (and Unity logs a warning every frame).
+        if (cam.GetComponent<AudioListener>() == null) cam.gameObject.AddComponent<AudioListener>();
         cam.orthographic = true; cam.orthographicSize = 9f;
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = new Color(0.07f, 0.07f, 0.10f);

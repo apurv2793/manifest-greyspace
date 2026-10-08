@@ -109,6 +109,11 @@ In-game debug commands (`Assets/Scripts/Debug/GreyspaceDebug.cs`), callable via 
 - **Unity licence:** the Editor needs Hub signed in with an active Personal licence (active since
   2026-06-14). If `Editor.log` says "No valid Unity Editor license found", tell the owner to check Hub —
   it was transient on 2026-10-09 while Hub re-synced. Agents never click through Unity Hub.
+- **macOS App Nap freezes Play mode at frame 1** when Unity's window is hidden. Fixed with
+  `defaults write com.unity3d.UnityEditor5.x NSAppSleepDisabled -bool YES` + Editor restart (done 2026-10-09).
+  Always prove frames advance with `wait_for` on `Time.frameCount` before trusting a run.
+- **`capture_game_view --save_path` saves under `Assets/`** even for a `Docs/...` path — move the PNG out
+  and delete the stray folder, or Unity imports it as a texture.
 - **Run in Background must stay on** (`PlayerSettings.runInBackground = true`, set 2026-10-09). With it
   off, Play mode freezes whenever the Editor window isn't focused — automated runs then see frame
   count stuck and the bot never moves.

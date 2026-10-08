@@ -1,0 +1,6 @@
+{
+  "output": null,
+  "diagnostics": [],
+  "success": true,
+  "result": "{\"mode\":\"Hub\",\"missionId\":\"\",\"wave\":0,\"totalWaves\":0,\"playerDead\":false,\"missionComplete\":false,\"playerHp\":100,\"playerMaxHp\":100,\"playerPos\":{\"x\":0.0,\"y\":0.0,\"z\":0.0},\"level\":1,\"xp\":0,\"skillPoints\":0,\"enemiesAlive\":0,\"frame\":6594,\"fps\":1684.2105712890625}"
+}

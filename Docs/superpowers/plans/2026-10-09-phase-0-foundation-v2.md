@@ -18,11 +18,11 @@
 |---|---|---|
 | Task 0 housekeeping | ✅ | `GameConfig.cs` parked (superseded by `ContentLibrary`/`ContentPack`); missing `.meta` files for 419c-added assets committed (61d3b7a) |
 | A1 Unity CLI + pipeline + plugin + MCP | ✅ | See `Docs/TOOLING.md`. MCP registered with absolute path. Owner signed licence 2026-10-09 |
-| A2 See loop script | 🟡 | Editor connected (pipeline server :7800, 0 compile errors). Needed `com.unity.inputsystem` 1.19.0 (pipeline won't compile without it) and `runInBackground = true`. Live commands work (play, eval, capture, console). **Open: Play mode stays at frame 1** even with set_autotick + runInBackground + Editor reporting focus — suspect macOS not presenting frames to an occluded Unity window. Needs a look with Unity visible on screen. Script `Tools/see/see.sh` not written yet |
+| A2 See loop script | 🟡 | Editor connected; play/eval/capture/console all work. Frame-1 freeze FIXED 2026-10-09: macOS App Nap (NSAppSleepDisabled=YES for com.unity3d.UnityEditor5.x, needs an Editor restart). Proof: `wait_for frameCount changed` met. `capture_game_view --save_path` writes under `Assets/` (move the PNG out). `Tools/see/see.sh` still to write |
 | B1 Test framework + asmdefs | ⏳ | `com.unity.test-framework` not installed; no asmdefs exist |
 | ~~B2/B3 GameInput~~ | ❌ dropped | `InputRouter` already centralises input. Bot uses `InputRouter` (D3) |
 | C Scene split | ⏳ | Re-mapped below (610 lines now) |
-| D Debug commands + ComboBot | 🟡 built | `GreyspaceDebug` (State/GoHub/GoMission/SpawnEnemy/GrantSkillPoints/SetGodMode/Screenshot/Start-Stop-ReportAutopilot), `ComboBot` via `InputRouter.SimMoveAxis/SimAimPoint/Signal*`. Compiles (NexusHub check + Editor). Verified live through CLI eval: state JSON, GoMission, SpawnEnemy x2, StartAutopilot all `ok`. **Bot behaviour unverified** until the frame-1 freeze is solved. Evidence: `Docs/evidence/20261009-021658-phase0-D-verify/` |
+| D Debug commands + ComboBot | ✅ | Bot cleared The Proving Ground unattended: 3/3 waves + 2 extra spawns, 54 attacks in ~33 s, missionComplete, level 2, 0 game errors. Evidence `Docs/evidence/20261009-025331-phase0-D-verify/`. Found + fixed: no AudioListener in scene → all sound inaudible + 19k warnings |
 | E Bake-off | ➡️ NexusHub | Exam v2 (12 briefs) delivered to NexusHub `exams/incoming/greyspace.unity_code.v2.json`. NexusHub owns models, scoring, compile gate |
 | F Docs | ⏳ | `AGENT-HANDBOOK.md` written 2026-10-09; FEEL-MATRIX, ART/STORY bibles, CRITIC-RUBRIC still to do (F3/F4 need owner) |
 | X Exit check | ⏳ | After A2, B1, C, D |

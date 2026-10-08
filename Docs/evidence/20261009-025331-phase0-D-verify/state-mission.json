@@ -1,0 +1,6 @@
+{
+  "output": null,
+  "diagnostics": [],
+  "success": true,
+  "result": "{\"mode\":\"Mission\",\"missionId\":\"proving_ground\",\"wave\":3,\"totalWaves\":3,\"playerDead\":false,\"missionComplete\":true,\"playerHp\":100,\"playerMaxHp\":100,\"playerPos\":{\"x\":-3.0987699031829836,\"y\":0.0,\"z\":1.8349405527114869},\"level\":2,\"xp\":140,\"skillPoints\":0,\"enemiesAlive\":0,\"frame\":69101,\"fps\":1633.768310546875}"
+}
