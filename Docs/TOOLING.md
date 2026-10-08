@@ -5,7 +5,7 @@
 - Unity CLI: 1.0.0-beta.13 (~/.unity/bin/unity; PATH line added to ~/.zshrc)
 - com.unity.pipeline: 0.8.0-exp.1
 - unity-agent-plugin (Claude Code, user scope): 0.1.8-beta
-- Claude Code MCP: `unity-editor-mcp` → `unity mcp` (stdio, user scope)
+- Claude Code MCP: `unity-editor-mcp` → `/Users/apurv2793/.unity/bin/unity mcp` (stdio, user scope). Use the ABSOLUTE path: the Claude desktop app doesn't read ~/.zshrc, so a bare `unity` command fails to launch ("Executable not found").
 
 ## Rules
 - Run `unity` commands from `~/greyspace` (symlink — the real path has a space).
